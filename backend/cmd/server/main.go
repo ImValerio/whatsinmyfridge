@@ -79,6 +79,8 @@ func main() {
 		{
 			userGroup.POST("", handlers.CreateUser)
 			userGroup.GET("", handlers.ListUsers)
+			userGroup.GET("/:id", handlers.GetUser)
+			userGroup.PUT("/:id", handlers.UpdateUser)
 			userGroup.DELETE("/:id", handlers.DeleteUser)
 		}
 	}
