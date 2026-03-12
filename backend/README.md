@@ -3,27 +3,37 @@
 A simple Go backend to monitor food in your fridge, organized by containers.
 
 ## Features
+
 - CRUD operations for **Containers** (e.g., Fridge, Pantry, Freezer).
 - CRUD operations for **Food** items linked to containers.
+- CRUD operations for **Users** to receive notifications.
+- **Email Notifications**: Automatic alerts for foods expiring today, sent via Resend.
+- Background ticker to check for expiring food every hour.
 - Automatic database migration using GORM and SQLite.
 - Clean, production-ready project structure.
 - Dockerized for easy deployment.
 
 ## Tech Stack
+
 - **Go** (1.25)
 - **Gin** (Web Framework)
 - **GORM** (ORM)
 - **SQLite** (Pure Go driver, no CGO required)
+- **Resend Go SDK** (Email provider)
+- **godotenv** (Environment variable management)
 
 ## Project Structure
+
 ```text
 .
 ├── cmd/
 │   └── server/          # Entry point of the application
 ├── internal/
 │   ├── database/        # Database initialization and migration
-│   ├── handlers/        # HTTP handlers for API endpoints
-│   └── models/          # GORM models (Container, Food)
+│   ├── handlers/        # HTTP handlers for API endpoints (Container, Food, User)
+│   ├── models/          # GORM models (Container, Food, User)
+│   └── notifier/        # Email notification logic
+├── .env                 # Environment variables (ignored by git)
 ├── Dockerfile           # Multi-stage Docker build
 ├── go.mod               # Go modules file
 ├── main_test.go         # Integration tests
@@ -33,27 +43,46 @@ A simple Go backend to monitor food in your fridge, organized by containers.
 ## API Endpoints
 
 ### Containers
-- `POST /containers`: Create a new container.
-- `GET /containers`: List all containers (preloads food).
-- `GET /containers/:id`: Get a specific container.
-- `PUT /containers/:id`: Update a container.
-- `DELETE /containers/:id`: Delete a container.
+
+- `POST /api/containers`: Create a new container.
+- `GET /api/containers`: List all containers (preloads food).
+- `GET /api/containers/:id`: Get a specific container.
+- `PUT /api/containers/:id`: Update a container.
+- `DELETE /api/containers/:id`: Delete a container.
 
 ### Food
-- `POST /food`: Add food to a container.
-- `GET /food`: List all food items.
-- `GET /food/:id`: Get a specific food item.
-- `PUT /food/:id`: Update a food item.
-- `DELETE /food/:id`: Remove a food item.
-- `POST /food/:id/open`: Open a food item (sets expiration to +2 days).
 
-## Getting Started
+- `POST /api/food`: Add food to a container.
+- `GET /api/food`: List all food items.
+- `GET /api/food/:id`: Get a specific food item.
+- `PUT /api/food/:id`: Update a food item.
+- `DELETE /api/food/:id`: Remove a food item.
+- `POST /api/food/:id/open`: Open a food item (sets expiration to +2 days).
+
+### Users
+
+- `POST /api/users`: Create a new user.
+- `GET /api/users`: List all users.
+- `GET /api/users/:id`: Get a specific user.
+- `PUT /api/users/:id`: Update a user.
+- `DELETE /api/users/:id`: Delete a user.
+
+## Environment Variables
+
+Create a `.env` file in the root directory with the following variables:
+
+```env
+RESEND_API_KEY=your_resend_api_key_here
+EMAIL_ADDRESS_FROM=email_address_sender
+```
 
 ### Prerequisites
+
 - Go 1.25 or higher
 - Docker (optional)
 
 ### Running Locally
+
 1. Clone the repository.
 2. Install dependencies:
    ```bash
@@ -66,11 +95,13 @@ A simple Go backend to monitor food in your fridge, organized by containers.
 4. The server will start on `http://localhost:8080`.
 
 ### Running Tests
+
 ```bash
 go test -v .
 ```
 
 ### Running with Docker
+
 1. Build the image:
    ```bash
    docker build -t whatsinmyfridge .
@@ -81,4 +112,5 @@ go test -v .
    ```
 
 ## License
+
 MIT
