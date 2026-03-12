@@ -60,9 +60,13 @@ func SendExpirationNotifications() error {
 	for i, user := range users {
 		userEmails[i] = user.Email
 	}
+	emailFrom := os.Getenv("EMAIL_ADDRESS_FROM")
+	if emailFrom == "" {
+		return fmt.Errorf("EMAIL_ADDRESS_FROM not set")
+	}
 
 	params := &resend.SendEmailRequest{
-		From:    "onboarding@resend.dev",
+		From:    emailFrom,
 		To:      userEmails,
 		Subject: "Food Expiration Alert - Today",
 		Html:    htmlContent,
