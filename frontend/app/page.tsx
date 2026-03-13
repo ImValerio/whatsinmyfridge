@@ -7,13 +7,26 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
 import { InventoryList } from "../components/layout/InventoryList";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api";
-
 export default function FridgeApp() {
+  const [apiBaseUrl, setApiBaseUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
   const [containers, setContainers] = useState<Container[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedContainerId, setSelectedContainerId] = useState<number | "">("");
-  
+
+  // Determine API URL on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hostname = window.location.hostname;
+      const currentConfig = process.env.NEXT_PUBLIC_API_URL || "";
+      
+      // If we're not on localhost, but our API is currently set to localhost (or empty),
+      // we must adapt to the current network IP so mobile devices can connect.
+      if (hostname !== "localhost" && (currentConfig.includes("localhost") || !currentConfig)) {
+        setApiBaseUrl(`http://${hostname}:8080/api`);
+      }
+    }
+  }, []);
+
   // UI State
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -24,11 +37,11 @@ export default function FridgeApp() {
   const [userEmail, setUserEmail] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
-  
+
   // Container Form State
   const [newContainerName, setNewContainerName] = useState("");
   const [isCreatingContainer, setIsCreatingContainer] = useState(false);
-  
+
   // Food Form State
   const [foodName, setFoodName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -40,22 +53,22 @@ export default function FridgeApp() {
     try {
       setLoading(true);
       const [contRes, userRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/containers`),
-        fetch(`${API_BASE_URL}/users`)
+        fetch(`${apiBaseUrl}/containers`),
+        fetch(`${apiBaseUrl}/users`)
       ]);
-      
+
       if (!contRes.ok || !userRes.ok) throw new Error("Failed to sync with server");
-      
+
       const contData = await contRes.json();
       const userData = await userRes.json();
-      
+
       setContainers(contData || []);
       setUsers(userData || []);
-      
+
       if (contData && contData.length > 0 && selectedContainerId === "") {
         setSelectedContainerId(contData[0].id);
       }
-      
+
       setError(null);
     } catch (err) {
       console.error(err);
@@ -63,7 +76,7 @@ export default function FridgeApp() {
     } finally {
       setLoading(false);
     }
-  }, [selectedContainerId]);
+  }, [selectedContainerId, apiBaseUrl]);
 
   useEffect(() => {
     fetchData();
@@ -76,7 +89,7 @@ export default function FridgeApp() {
 
     setIsSubmittingUser(true);
     const method = editingUser ? "PUT" : "POST";
-    const url = editingUser ? `${API_BASE_URL}/users/${editingUser.id}` : `${API_BASE_URL}/users`;
+    const url = editingUser ? `${apiBaseUrl}/users/${editingUser.id}` : `${apiBaseUrl}/users`;
 
     try {
       const res = await fetch(url, {
@@ -101,7 +114,7 @@ export default function FridgeApp() {
   const handleUserDelete = async (id: number) => {
     if (!confirm("Are you sure?")) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: "DELETE" });
+      const res = await fetch(`${apiBaseUrl}/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete user");
       fetchData();
     } catch (err) {
@@ -116,15 +129,15 @@ export default function FridgeApp() {
 
     setIsSubmittingFood(true);
     const method = editingFood ? "PUT" : "POST";
-    const url = editingFood ? `${API_BASE_URL}/food/${editingFood.id}` : `${API_BASE_URL}/food`;
+    const url = editingFood ? `${apiBaseUrl}/food/${editingFood.id}` : `${apiBaseUrl}/food`;
     const isoDate = expirationDate ? new Date(expirationDate).toISOString() : null;
 
     try {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          name: foodName.trim(), 
+        body: JSON.stringify({
+          name: foodName.trim(),
           quantity: Math.max(1, Number(quantity)),
           expiration_date: isoDate,
           container_id: Number(selectedContainerId)
@@ -146,7 +159,7 @@ export default function FridgeApp() {
 
   const handleFoodOpen = async (id: number) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/food/${id}/open`, { method: "POST" });
+      const res = await fetch(`${apiBaseUrl}/food/${id}/open`, { method: "POST" });
       if (!res.ok) throw new Error("Failed to open item");
       fetchData();
     } catch (err) {
@@ -157,7 +170,7 @@ export default function FridgeApp() {
   const handleFoodDelete = async (id: number) => {
     if (!confirm("Remove this item?")) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/food/${id}`, { method: "DELETE" });
+      const res = await fetch(`${apiBaseUrl}/food/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       fetchData();
     } catch (err) {
@@ -180,7 +193,7 @@ export default function FridgeApp() {
     if (!newContainerName.trim()) return;
     setIsCreatingContainer(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/containers`, {
+      const res = await fetch(`${apiBaseUrl}/containers`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newContainerName.trim() }),
@@ -200,7 +213,7 @@ export default function FridgeApp() {
   const handleContainerDelete = async (id: number) => {
     if (!confirm("Delete this container and all its contents?")) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/containers/${id}`, { method: "DELETE" });
+      const res = await fetch(`${apiBaseUrl}/containers/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
       fetchData();
     } catch (err) {
@@ -210,15 +223,15 @@ export default function FridgeApp() {
 
   const inventoryStats = useMemo(() => {
     const totalItems = containers.reduce((acc, c) => acc + (c.foods?.length || 0), 0);
-    const expiredItems = containers.reduce((acc, c) => 
+    const expiredItems = containers.reduce((acc, c) =>
       acc + (c.foods?.filter(f => f.expiration_date && new Date(f.expiration_date) < new Date()).length || 0), 0);
     return { totalItems, expiredItems };
   }, [containers]);
 
   return (
     <div className="min-h-screen bg-[#FDFCF9] text-[#2C2C2E] font-sans selection:bg-emerald-100 relative overflow-x-hidden">
-      
-      <Sidebar 
+
+      <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         users={users}
@@ -235,8 +248,8 @@ export default function FridgeApp() {
       />
 
       <div className={`py-16 px-6 sm:px-8 max-w-2xl mx-auto transition-all duration-500 ${isSidebarOpen ? 'sm:translate-x-40 blur-sm pointer-events-none' : ''}`}>
-        
-        <Header 
+
+        <Header
           users={users}
           onOpenSidebar={() => setIsSidebarOpen(true)}
           totalItems={inventoryStats.totalItems}
@@ -245,7 +258,7 @@ export default function FridgeApp() {
 
         <div className="grid gap-10">
           <div className="grid sm:grid-cols-2 gap-6 items-start">
-            
+
             <Card>
               <h2 className="text-lg font-black mb-6 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -284,7 +297,7 @@ export default function FridgeApp() {
                     <option key={c.id} value={c.id} className="text-gray-900">{c.name}</option>
                   ))}
                 </select>
-                
+
                 <div className="flex gap-2">
                   <Input
                     value={foodName}
@@ -305,9 +318,9 @@ export default function FridgeApp() {
                     disabled={isSubmittingFood}
                   />
                 </div>
-                
+
                 <div className="relative">
-                   <Input
+                  <Input
                     type="date"
                     value={expirationDate}
                     onChange={(e) => setExpirationDate(e.target.value)}
@@ -353,10 +366,10 @@ export default function FridgeApp() {
             ) : containers.length === 0 ? (
               <div className="p-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
                 <span className="text-5xl mb-6 block grayscale opacity-50">🧊</span>
-                <p className="text-gray-400 font-medium text-sm">Your fridge is looking a bit lonely.<br/>Add a container to get started!</p>
+                <p className="text-gray-400 font-medium text-sm">Your fridge is looking a bit lonely.<br />Add a container to get started!</p>
               </div>
             ) : (
-              <InventoryList 
+              <InventoryList
                 containers={containers}
                 onFoodOpen={handleFoodOpen}
                 onFoodEdit={handleFoodEdit}
@@ -366,9 +379,9 @@ export default function FridgeApp() {
             )}
           </section>
         </div>
-        
+
         <footer className="mt-20 pt-8 border-t border-gray-100 text-center">
-           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Keep it fresh • Reduce waste • Save money</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Keep it fresh • Reduce waste • Save money</p>
         </footer>
       </div>
     </div>
