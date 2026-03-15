@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,8 +23,16 @@ func OpenFood(c *gin.Context) {
 		return
 	}
 
-	// Set is_opened to true and expiration to now + 2 days
-	expiration := time.Now().AddDate(0, 0, 2)
+	// Get expirationDays from query, default to 2
+	daysStr := c.DefaultQuery("expirationDays", "2")
+	days, err := strconv.Atoi(daysStr)
+	if err != nil || days < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid expirationDays parameter"})
+		return
+	}
+
+	// Set is_opened to true and expiration to now + days
+	expiration := time.Now().AddDate(0, 0, days)
 	food.IsOpened = true
 	food.ExpirationDate = &expiration
 

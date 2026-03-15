@@ -57,7 +57,7 @@ A simple Go backend to monitor food in your fridge, organized by containers.
 - `GET /api/food/:id`: Get a specific food item.
 - `PUT /api/food/:id`: Update a food item.
 - `DELETE /api/food/:id`: Remove a food item.
-- `POST /api/food/:id/open`: Open a food item (sets expiration to +2 days).
+- `POST /food/:id/open?expirationDays=2`: Open a food item (sets expiration to +X days, defaults to 2).
 
 ### Users
 
