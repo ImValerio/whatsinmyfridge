@@ -157,9 +157,9 @@ export default function FridgeApp() {
     }
   };
 
-  const handleFoodOpen = async (id: number) => {
+  const handleFoodOpen = async (id: number, expirationDays: number = 2) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/food/${id}/open`, { method: "POST" });
+      const res = await fetch(`${apiBaseUrl}/food/${id}/open?expirationDays=${expirationDays}`, { method: "POST" });
       if (!res.ok) throw new Error("Failed to open item");
       fetchData();
     } catch (err) {
