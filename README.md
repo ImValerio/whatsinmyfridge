@@ -25,23 +25,47 @@ docker-compose up --build
 
 This will:
 1. Build the backend and frontend Docker images.
-2. Start the backend service on `http://localhost:8080`.
-3. Start the frontend service on `http://localhost:3000`.
+2. Start the Nginx reverse proxy on `http://localhost` (Port 80).
+3. Route traffic to the backend and frontend services internally.
 
 ## Services
 
+### Main Application (Nginx)
+- **Port**: `80` (Standard HTTP)
+- **URL**: `http://localhost`
+- **Role**: Unified entry point for both Frontend and Backend API.
+
 ### Backend (Go)
-- **Port**: `8080`
+- **Port**: `8080` (Exposed for direct API access/debugging)
 - **Health Check**: `http://localhost:8080/api/health`
-- **Base API URL**: `http://localhost:8080/api`
+- **Base API URL**: `http://localhost/api`
 - **Storage**: Uses a persistent SQLite database stored in a Docker volume (`backend_data`).
 
 ### Frontend (Next.js)
-- **Port**: `3000`
+- **Port**: Internal (Accessible via Nginx on port 80)
 - **Technology**: React, TypeScript, Next.js, Tailwind CSS.
-- **Environment**: Configured to connect to the backend at `http://localhost:8080/api/food`.
+- **Environment**: Automatically detects the host's IP/hostname to connect to the backend.
+
+## Local Network Access (Raspberry Pi / Linux)
+
+To access your fridge from any device on your Wi-Fi (phone, tablet, laptop) using a URL instead of an IP address:
+
+1.  **Set your Raspberry Pi's hostname** (e.g., `myfridge`):
+    ```bash
+    sudo hostnamectl set-hostname myfridge
+    ```
+2.  **Enable mDNS (Avahi)** to broadcast the `.local` address:
+    ```bash
+    sudo apt update && sudo apt install -y avahi-daemon
+    sudo systemctl enable --now avahi-daemon
+    ```
+3. **Access the app** from your phone or laptop:
+    *   **Main App**: `http://myfridge.local/` (No port needed!)
+    *   **Direct API Access**: `http://myfridge.local:8080/api` (Still available for debugging)
 
 ## Troubleshooting
 
-- **CORS Issues**: Ensure the backend allows requests from the frontend origin (`http://localhost:3000`).
+
+- **CORS Issues**: The backend is configured to allow all origins (`*`) by default for easy local network access.
+- **mDNS/Bonjour**: On Windows, ensure "Network Discovery" is on. iOS/macOS support `.local` addresses natively.
 - **Data Persistence**: Data is saved in the `backend_data` volume. To reset, run `docker-compose down -v`.

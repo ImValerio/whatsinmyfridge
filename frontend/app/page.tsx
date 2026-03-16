@@ -22,7 +22,13 @@ export default function FridgeApp() {
       // If we're not on localhost, but our API is currently set to localhost (or empty),
       // we must adapt to the current network IP so mobile devices can connect.
       if (hostname !== "localhost" && (currentConfig.includes("localhost") || !currentConfig)) {
-        setApiBaseUrl(`http://${hostname}:8080/api`);
+        // Use relative path if we are on port 80 (Nginx), otherwise specify the default backend port.
+        const port = window.location.port;
+        if (!port || port === "80") {
+          setApiBaseUrl("/api");
+        } else {
+          setApiBaseUrl(`http://${hostname}:8080/api`);
+        }
       }
     }
   }, []);
