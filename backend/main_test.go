@@ -99,4 +99,46 @@ func TestCRUD(t *testing.T) {
 	assert.Len(t, containers[0].Foods, 1)
 	assert.Equal(t, "Apple", containers[0].Foods[0].Name)
 	assert.True(t, containers[0].Foods[0].IsOpened)
+
+	// 5. Test Autocomplete
+	// Register Autocomplete route for test
+	api.GET("/food/autocomplete", handlers.AutocompleteFood)
+
+	req, _ = http.NewRequest("GET", "/api/food/autocomplete?q=Ap", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	var suggestions []string
+	json.Unmarshal(w.Body.Bytes(), &suggestions)
+	assert.Contains(t, suggestions, "Apple")
+
+	// Create another food to test distinct logs
+	food2JSON := `{"name": "Banana", "quantity": 2, "container_id": 1}`
+	req, _ = http.NewRequest("POST", "/api/food", bytes.NewBufferString(food2JSON))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// Test Autocomplete for Banana
+	req, _ = http.NewRequest("GET", "/api/food/autocomplete?q=Ban", nil)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	json.Unmarshal(w.Body.Bytes(), &suggestions)
+	assert.Contains(t, suggestions, "Banana")
+
+	// Check that we don't have duplicate logs (create Apple again)
+	req, _ = http.NewRequest("POST", "/api/food", bytes.NewBufferString(foodJSON))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	var count int64
+	database.DB.Model(&models.FoodLog{}).Where("name = ?", "Apple").Count(&count)
+	assert.Equal(t, int64(1), count)
 }

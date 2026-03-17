@@ -50,10 +50,36 @@ export default function FridgeApp() {
 
   // Food Form State
   const [foodName, setFoodName] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const [quantity, setQuantity] = useState<number>(1);
   const [expirationDate, setExpirationDate] = useState("");
   const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
   const [isSubmittingFood, setIsSubmittingFood] = useState(false);
+
+  // Autocomplete Logic
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (foodName.trim().length >= 2 && !editingFood) {
+        try {
+          setIsSearching(true);
+          const res = await fetch(`${apiBaseUrl}/food/autocomplete?q=${encodeURIComponent(foodName.trim())}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSuggestions(data || []);
+          }
+        } catch (err) {
+          console.error("Autocomplete error:", err);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        setSuggestions([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [foodName, apiBaseUrl, editingFood]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -304,16 +330,44 @@ export default function FridgeApp() {
                   ))}
                 </select>
 
-                <div className="flex gap-2">
-                  <Input
-                    value={foodName}
-                    onChange={(e) => setFoodName(e.target.value)}
-                    className="flex-[3] bg-white/10 text-white placeholder:text-gray-500"
-                    placeholder="What is it?"
-                    required
-                    maxLength={50}
-                    disabled={isSubmittingFood}
-                  />
+                <div className="flex gap-2 relative">
+                  <div className="flex-[3] relative">
+                    <Input
+                      value={foodName}
+                      onChange={(e) => setFoodName(e.target.value)}
+                      onBlur={() => setTimeout(() => setSuggestions([]), 200)}
+                      className="bg-white/10 text-white placeholder:text-gray-500"
+                      placeholder="What is it?"
+                      required
+                      maxLength={50}
+                      disabled={isSubmittingFood}
+                    />
+                    
+                    {/* Autocomplete Suggestions */}
+                    {suggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
+                        {suggestions.map((suggestion, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setFoodName(suggestion);
+                              setSuggestions([]);
+                            }}
+                            className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50 hover:text-emerald-600 transition-colors border-b border-gray-50 last:border-none"
+                          >
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {isSearching && (
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                      </div>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     value={quantity}

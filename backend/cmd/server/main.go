@@ -68,6 +68,7 @@ func main() {
 		{
 			foodGroup.POST("", handlers.CreateFood)
 			foodGroup.GET("", handlers.ListFood)
+			foodGroup.GET("/autocomplete", handlers.AutocompleteFood)
 			foodGroup.GET("/:id", handlers.GetFood)
 			foodGroup.PUT("/:id", handlers.UpdateFood)
 			foodGroup.DELETE("/:id", handlers.DeleteFood)

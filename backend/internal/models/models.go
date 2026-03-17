@@ -26,6 +26,13 @@ type Food struct {
 	UpdatedAt             time.Time  `json:"updated_at"`
 }
 
+// FoodLog model for autocomplete
+type FoodLog struct {
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	Name      string    `json:"name" gorm:"unique;not null"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
 // User model
 type User struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
