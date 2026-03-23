@@ -9,6 +9,7 @@ interface InventoryListProps {
   onFoodEdit: (item: FoodItem) => void;
   onFoodDelete: (id: number) => void;
   onContainerDelete: (id: number) => void;
+  hideHeader?: boolean;
 }
 
 const FoodItemRow = ({ 
@@ -66,7 +67,7 @@ const FoodItemRow = ({
 };
 
 export const InventoryList = ({
-  containers, onFoodOpen, onFoodEdit, onFoodDelete, onContainerDelete
+  containers, onFoodOpen, onFoodEdit, onFoodDelete, onContainerDelete, hideHeader = false
 }: InventoryListProps) => (
   <div className="grid gap-8">
     {containers.map((container, idx) => (
@@ -75,17 +76,19 @@ export const InventoryList = ({
         className="bg-white rounded-[2.5rem] shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-8 duration-700"
         style={{ animationDelay: `${idx * 100}ms` }}
       >
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-[#FDFCF9]/50">
-          <h3 className="text-2xl font-black text-[#1C1C1E] tracking-tight flex items-center gap-3">
-             {container.name}
-             <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
-               {container.foods?.length || 0}
-             </span>
-          </h3>
-          <Button variant="ghost" size="icon" onClick={() => onContainerDelete(container.id)}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          </Button>
-        </div>
+        {!hideHeader && (
+          <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-[#FDFCF9]/50">
+            <h3 className="text-2xl font-black text-[#1C1C1E] tracking-tight flex items-center gap-3">
+               {container.name}
+               <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                 {container.foods?.length || 0}
+               </span>
+            </h3>
+            <Button variant="ghost" size="icon" onClick={() => onContainerDelete(container.id)}>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </Button>
+          </div>
+        )}
         
         {container.foods && container.foods.length > 0 ? (
           <ul className="divide-y divide-gray-50">

@@ -6,19 +6,22 @@ import { Button, Input, Card } from "../components/ui";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
 import { InventoryList } from "../components/layout/InventoryList";
+import { BottomNavbar, TabType } from "../components/layout/BottomNavbar";
 
 export default function FridgeApp() {
   const [apiBaseUrl, setApiBaseUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
   const [containers, setContainers] = useState<Container[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [selectedContainerId, setSelectedContainerId] = useState<number | "">("");
+  const [activeTab, setActiveTab] = useState<TabType>("food");
+  const [isFoodFormOpen, setIsFoodFormOpen] = useState(false);
 
   // Determine API URL on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
       const currentConfig = process.env.NEXT_PUBLIC_API_URL || "";
-      
+
       // If we're not on localhost, but our API is currently set to localhost (or empty),
       // we must adapt to the current network IP so mobile devices can connect.
       if (hostname !== "localhost" && (currentConfig.includes("localhost") || !currentConfig)) {
@@ -181,6 +184,7 @@ export default function FridgeApp() {
       setQuantity(1);
       setExpirationDate("");
       setEditingFood(null);
+      setIsFoodFormOpen(false);
       fetchData();
     } catch (err) {
       alert("Could not save food item.");
@@ -216,6 +220,7 @@ export default function FridgeApp() {
     setQuantity(item.quantity);
     setExpirationDate(item.expiration_date ? item.expiration_date.split("T")[0] : "");
     setSelectedContainerId(item.container_id);
+    setIsFoodFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -260,8 +265,13 @@ export default function FridgeApp() {
     return { totalItems, expiredItems };
   }, [containers]);
 
+  const filteredContainers = useMemo(() => {
+    if (selectedContainerId === "") return containers;
+    return containers.filter(c => c.id === selectedContainerId);
+  }, [containers, selectedContainerId]);
+
   return (
-    <div className="min-h-screen bg-[#FDFCF9] text-[#2C2C2E] font-sans selection:bg-emerald-100 relative overflow-x-hidden">
+    <div className="min-h-screen bg-[#FDFCF9] text-[#2C2C2E] font-sans selection:bg-emerald-100 relative overflow-x-hidden pb-20 sm:pb-0">
 
       <Sidebar
         isOpen={isSidebarOpen}
@@ -277,40 +287,124 @@ export default function FridgeApp() {
         editingUser={editingUser}
         setEditingUser={setEditingUser}
         isSubmitting={isSubmittingUser}
+        newContainerName={newContainerName}
+        setNewContainerName={setNewContainerName}
+        onContainerSubmit={handleCreateContainer}
+        isCreatingContainer={isCreatingContainer}
       />
 
-      <div className={`py-16 px-6 sm:px-8 max-w-2xl mx-auto transition-all duration-500 ${isSidebarOpen ? 'sm:translate-x-40 blur-sm pointer-events-none' : ''}`}>
+      <div className={`py-8 sm:py-16 px-4 sm:px-8 max-w-2xl mx-auto transition-all duration-500 ${isSidebarOpen ? 'sm:translate-x-40 blur-sm pointer-events-none' : ''}`}>
 
-        <Header
-          users={users}
-          onOpenSidebar={() => setIsSidebarOpen(true)}
-          totalItems={inventoryStats.totalItems}
-          expiredItems={inventoryStats.expiredItems}
-        />
+        {/* Desktop Header */}
+        <div className="hidden sm:block">
+          <Header
+            users={users}
+            onOpenSidebar={() => setIsSidebarOpen(true)}
+            totalItems={inventoryStats.totalItems}
+            expiredItems={inventoryStats.expiredItems}
+          />
+        </div>
 
-        <div className="grid gap-10">
-          <div className="grid sm:grid-cols-2 gap-6 items-start">
+        {/* Mobile Views */}
+        <div className="sm:hidden">
+          {activeTab === "food" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                {containers.length > 1 ? (
+                  <select
+                    value={selectedContainerId}
+                    onChange={(e) => setSelectedContainerId(Number(e.target.value))}
+                    className="text-3xl font-black text-[#1C1C1E] bg-transparent border-none focus:ring-0 outline-none p-0 appearance-none"
+                  >
+                    {containers.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <h1 className="text-3xl font-black text-[#1C1C1E]">
+                    {containers.find(c => c.id === selectedContainerId)?.name || "Fridge"}
+                  </h1>
+                )}
+              </div>
 
-            <Card>
-              <h2 className="text-lg font-black mb-6 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                New Space
-              </h2>
-              <form onSubmit={handleCreateContainer} className="space-y-4">
-                <Input
-                  value={newContainerName}
-                  onChange={(e) => setNewContainerName(e.target.value)}
-                  placeholder="e.g. Kitchen Fridge"
-                  required
-                  maxLength={30}
-                  disabled={isCreatingContainer}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4">
+                  <div className="w-8 h-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+                </div>
+              ) : containers.length === 0 ? (
+                <div className="py-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
+                  <p className="text-gray-400 font-medium text-sm">Add a container in Settings!</p>
+                </div>
+              ) : (
+                <InventoryList
+                  containers={filteredContainers}
+                  onFoodOpen={handleFoodOpen}
+                  onFoodEdit={handleFoodEdit}
+                  onFoodDelete={handleFoodDelete}
+                  onContainerDelete={handleContainerDelete}
+                  hideHeader={true}
                 />
-                <Button type="submit" isLoading={isCreatingContainer} className="w-full">
-                  Add Container
-                </Button>
-              </form>
-            </Card>
+              )}
+            </div>
+          )}
 
+          {activeTab === "stats" && (
+            <div className="space-y-8">
+              <h1 className="text-3xl font-black text-[#1C1C1E]">Statistics</h1>
+              <div className="grid gap-4">
+                <div className="bg-white px-6 py-8 rounded-[2rem] shadow-sm border border-gray-100 text-center">
+                  <span className="block text-5xl font-black text-[#1C1C1E] mb-2">{inventoryStats.totalItems}</span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-gray-400">Total Items tracked</span>
+                </div>
+                <div className={`px-6 py-8 rounded-[2rem] shadow-sm border text-center transition-colors ${inventoryStats.expiredItems > 0 ? 'bg-rose-50 border-rose-100' : 'bg-white border-gray-100'}`}>
+                  <span className={`block text-5xl font-black mb-2 ${inventoryStats.expiredItems > 0 ? 'text-rose-600' : 'text-[#1C1C1E]'}`}>{inventoryStats.expiredItems}</span>
+                  <span className={`text-xs font-bold uppercase tracking-wider ${inventoryStats.expiredItems > 0 ? 'text-rose-400' : 'text-gray-400'}`}>Expired Items</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "settings" && (
+            <div className="space-y-8">
+              <h1 className="text-3xl font-black text-[#1C1C1E]">Settings</h1>
+
+              <Card>
+                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  Family Management
+                </h2>
+                <p className="text-sm text-gray-500 mb-6">Manage members who will receive notification.</p>
+                <Button onClick={() => setIsSidebarOpen(true)} className="w-full">
+                  Handle familiy members
+                </Button>
+              </Card>
+
+              <Card>
+                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  Containers
+                </h2>
+                <form onSubmit={handleCreateContainer} className="space-y-4">
+                  <Input
+                    value={newContainerName}
+                    onChange={(e) => setNewContainerName(e.target.value)}
+                    placeholder="New Space Name"
+                    required
+                    maxLength={30}
+                    disabled={isCreatingContainer}
+                  />
+                  <Button type="submit" isLoading={isCreatingContainer} variant="secondary" className="w-full">
+                    Add Container
+                  </Button>
+                </form>
+              </Card>
+            </div>
+          )}
+        </div>
+
+        {/* Desktop Main Content */}
+        <div className="hidden sm:grid gap-10">
+          <div className="max-w-md mx-auto w-full">
             <Card variant="dark">
               <h2 className="text-lg font-black mb-6 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-blue-400"></span>
@@ -342,7 +436,7 @@ export default function FridgeApp() {
                       maxLength={50}
                       disabled={isSubmittingFood}
                     />
-                    
+
                     {/* Autocomplete Suggestions */}
                     {suggestions.length > 0 && (
                       <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
@@ -361,7 +455,7 @@ export default function FridgeApp() {
                         ))}
                       </div>
                     )}
-                    
+
                     {isSearching && (
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
                         <div className="w-4 h-4 border-2 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
@@ -440,10 +534,111 @@ export default function FridgeApp() {
           </section>
         </div>
 
-        <footer className="mt-20 pt-8 border-t border-gray-100 text-center">
+        <footer className="mt-20 pt-8 border-t border-gray-100 text-center hidden sm:block">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Keep it fresh • Reduce waste • Save money</p>
         </footer>
       </div>
+
+      {/* Mobile FAB */}
+      {activeTab === "food" && (
+        <button
+          onClick={() => { setEditingFood(null); setFoodName(""); setQuantity(1); setExpirationDate(""); setIsFoodFormOpen(true); }}
+          className="fixed bottom-24 right-6 w-16 h-16 bg-emerald-500 text-white rounded-full shadow-2xl flex items-center justify-center z-30 sm:hidden active:scale-90 transition-transform"
+        >
+          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" />
+          </svg>
+        </button>
+      )}
+
+      {/* Mobile Food Form Modal */}
+      {isFoodFormOpen && (
+        <div className="fixed inset-0 bg-[#1C1C1E]/60 backdrop-blur-md z-[60] flex items-end sm:hidden">
+          <div className="w-full bg-white rounded-t-[3rem] p-8 animate-in slide-in-from-bottom duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-2xl font-black text-[#1C1C1E]">{editingFood ? "Edit Food" : "Add Food"}</h2>
+              <button onClick={() => setIsFoodFormOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <form onSubmit={handleFoodSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Storage</label>
+                <select
+                  value={selectedContainerId}
+                  onChange={(e) => setSelectedContainerId(Number(e.target.value))}
+                  className="w-full px-6 py-5 bg-gray-50 border-none rounded-[1.5rem] focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold appearance-none"
+                  required
+                >
+                  <option value="" disabled>Choose storage...</option>
+                  {containers.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Item Name</label>
+                <div className="relative">
+                  <Input
+                    value={foodName}
+                    onChange={(e) => setFoodName(e.target.value)}
+                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+                    placeholder="e.g. Greek Yogurt"
+                    required
+                  />
+                  {suggestions.length > 0 && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100]">
+                      {suggestions.map((suggestion, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => { setFoodName(suggestion); setSuggestions([]); }}
+                          className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Quantity</label>
+                  <Input
+                    type="number"
+                    value={quantity}
+                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    min="1"
+                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Expires</label>
+                  <Input
+                    type="date"
+                    value={expirationDate}
+                    onChange={(e) => setExpirationDate(e.target.value)}
+                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+                  />
+                </div>
+              </div>
+
+              <Button type="submit" isLoading={isSubmittingFood} className="w-full py-6 rounded-[1.5rem] text-lg">
+                {editingFood ? "Save Changes" : "Add to Fridge"}
+              </Button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <BottomNavbar activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 }
