@@ -63,6 +63,28 @@ To access your fridge from any device on your Wi-Fi (phone, tablet, laptop) usin
     *   **Main App**: `http://myfridge.local/` (No port needed!)
     *   **Direct API Access**: `http://myfridge.local:8080/api` (Still available for debugging)
 
+## Resource Optimization (Raspberry Pi)
+
+If you are running this on a low-resource device like a **Raspberry Pi 3 (1GB RAM)**, the build process might be slow or fail. We have optimized the configuration, but you should also follow these steps:
+
+1.  **Enable Swap Space**: Increase your swap to at least 2GB to prevent "Out of Memory" errors during the Next.js build:
+    ```bash
+    sudo dphys-swapfile swapoff
+    sudo nano /etc/dphys-swapfile # Set CONF_SWAPSIZE=2048
+    sudo dphys-swapfile setup
+    sudo dphys-swapfile swapon
+    ```
+2.  **Use BuildKit**: Enable the modern Docker build engine for better performance:
+    ```bash
+    export DOCKER_BUILDKIT=1
+    docker-compose up --build
+    ```
+3.  **Optimization Features Included**:
+    -   **Multi-stage builds**: Reduces the final image size.
+    -   **Disabled ESLint/TypeScript during build**: Saves significant RAM (ensure you lint/type-check on your dev machine).
+    -   **Memory Limits**: Next.js is configured to limit its heap size during build.
+    -   **.dockerignore**: Prevents large local folders (like `node_modules`) from being sent to the Pi's Docker daemon.
+
 ## Troubleshooting
 
 

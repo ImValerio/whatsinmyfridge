@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,8 @@ COPY . .
 
 # Build the application
 # Use CGO_ENABLED=0 because glebarez/sqlite is pure Go
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./cmd/server/main.go
+# -ldflags="-s -w" strips debugging symbols for a smaller binary
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
