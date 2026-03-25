@@ -80,6 +80,8 @@ If you are running this on a low-resource device like a **Raspberry Pi 3 (1GB RA
     docker-compose up --build
     ```
 3.  **Optimization Features Included**:
+    -   **Static Export**: Next.js is compiled to static JS, HTML, and CSS files during build, eliminating Node.js runtime overhead.
+    -   **Lightweight Server**: The frontend is served using a minimal Nginx container on port 3000, significantly reducing RAM usage compared to a full Node.js server.
     -   **Multi-stage builds**: Reduces the final image size.
     -   **Disabled ESLint/TypeScript during build**: Saves significant RAM (ensure you lint/type-check on your dev machine).
     -   **Memory Limits**: Next.js is configured to limit its heap size during build.
