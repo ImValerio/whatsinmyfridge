@@ -8,15 +8,20 @@ RUN apk add --no-cache git
 
 # Copy go mod and sum files
 COPY go.mod go.sum ./
-RUN go mod download
+
+# Cache Go modules
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy the source code
 COPY . .
 
-# Build the application
+# Build the application with cache mounts for the build cache
 # Use CGO_ENABLED=0 because glebarez/sqlite is pure Go
 # -ldflags="-s -w" strips debugging symbols for a smaller binary
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/server/main.go
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o main ./cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
