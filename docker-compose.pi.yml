@@ -1,13 +1,10 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: imvalerio/whatsinmyfridge-be
     ports:
       - "8080:8080"
     healthcheck:
-      test:
-        ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/api/health"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -18,9 +15,7 @@ services:
     restart: always
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: imvalerio/whatsinmyfridge-fe
     expose:
       - "3000"
     depends_on:

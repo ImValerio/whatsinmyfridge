@@ -17,22 +17,35 @@ This project is a monorepo containing:
 
 ## Getting Started
 
-To launch the entire application, simply run the following command from the project root:
+### 1. Standard (Local Build)
+To build and launch the entire application from source:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-This will:
-1. Build the backend and frontend Docker images.
-2. Start the Nginx reverse proxy on `http://localhost` (Port 80).
-3. Route traffic to the backend and frontend services internally.
+### 2. Raspberry Pi / Linux (Easy Setup)
+If you are running on a Raspberry Pi or a Linux server, you can use the automated setup script. This script handles:
+- Setting a custom hostname (e.g., `myfridge.local`).
+- Installing and configuring Avahi (mDNS) for easy network access.
+- **Configuring Resend API Key for email notifications (Optional).**
+- Configuring the app to start automatically on boot.
+- Choosing between **prebuilt images** (faster) or **local builds** (from source).
+
+```bash
+chmod +x setup_pi.sh
+sudo ./setup_pi.sh
+```
+
+**Prebuilt Images available on Docker Hub:**
+- `imvalerio/whatsinmyfridge-be` (Backend)
+- `imvalerio/whatsinmyfridge-fe` (Frontend)
 
 ## Services
 
 ### Main Application (Nginx)
 - **Port**: `80` (Standard HTTP)
-- **URL**: `http://localhost`
+- **URL**: `http://localhost` or `http://<your-hostname>.local`
 - **Role**: Unified entry point for both Frontend and Backend API.
 
 ### Backend (Go)
@@ -45,23 +58,6 @@ This will:
 - **Port**: Internal (Accessible via Nginx on port 80)
 - **Technology**: React, TypeScript, Next.js, Tailwind CSS.
 - **Environment**: Automatically detects the host's IP/hostname to connect to the backend.
-
-## Local Network Access (Raspberry Pi / Linux)
-
-To access your fridge from any device on your Wi-Fi (phone, tablet, laptop) using a URL instead of an IP address:
-
-1.  **Set your Raspberry Pi's hostname** (e.g., `myfridge`):
-    ```bash
-    sudo hostnamectl set-hostname myfridge
-    ```
-2.  **Enable mDNS (Avahi)** to broadcast the `.local` address:
-    ```bash
-    sudo apt update && sudo apt install -y avahi-daemon
-    sudo systemctl enable --now avahi-daemon
-    ```
-3. **Access the app** from your phone or laptop:
-    *   **Main App**: `http://myfridge.local/` (No port needed!)
-    *   **Direct API Access**: `http://myfridge.local:8080/api` (Still available for debugging)
 
 ## Resource Optimization (Raspberry Pi)
 
