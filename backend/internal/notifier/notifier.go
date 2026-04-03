@@ -20,19 +20,31 @@ func SendExpirationNotifications() error {
 
 	client := resend.NewClient(apiKey)
 
-	// Get today's range
+	// Get ranges
 	now := time.Now()
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	todayEnd := todayStart.Add(24 * time.Hour)
+	tomorrowStart := todayStart.Add(24 * time.Hour)
+	tomorrowEnd := tomorrowStart.Add(24 * time.Hour)
 
 	var expiringFoods []models.Food
-	err := database.DB.Where("expiration_date >= ? AND expiration_date < ? AND expiration_communicated = ?", todayStart, todayEnd, false).Find(&expiringFoods).Error
+	err := database.DB.Where("expiration_date >= ? AND expiration_date < ? AND expiration_communicated = ?", todayStart, tomorrowEnd, false).Find(&expiringFoods).Error
 	if err != nil {
 		return fmt.Errorf("failed to query expiring foods: %v", err)
 	}
 
 	if len(expiringFoods) == 0 {
 		return nil
+	}
+
+	var expiringToday []models.Food
+	var expiringTomorrow []models.Food
+
+	for _, food := range expiringFoods {
+		if food.ExpirationDate.Before(tomorrowStart) {
+			expiringToday = append(expiringToday, food)
+		} else {
+			expiringTomorrow = append(expiringTomorrow, food)
+		}
 	}
 
 	var users []models.User
@@ -47,19 +59,28 @@ func SendExpirationNotifications() error {
 	}
 
 	// Prepare email content
-	var foodList strings.Builder
-	foodList.WriteString("<ul>")
-	for _, food := range expiringFoods {
-		foodList.WriteString(fmt.Sprintf("<li>%s (Quantity: %d)</li>", food.Name, food.Quantity))
+	var htmlContent strings.Builder
+	if len(expiringToday) > 0 {
+		htmlContent.WriteString("<h3>Expiring Today:</h3><ul>")
+		for _, food := range expiringToday {
+			htmlContent.WriteString(fmt.Sprintf("<li>%s (Quantity: %d)</li>", food.Name, food.Quantity))
+		}
+		htmlContent.WriteString("</ul>")
 	}
-	foodList.WriteString("</ul>")
 
-	htmlContent := fmt.Sprintf("<p>The following items are expiring today:</p>%s", foodList.String())
+	if len(expiringTomorrow) > 0 {
+		htmlContent.WriteString("<h3>Expiring Tomorrow:</h3><ul>")
+		for _, food := range expiringTomorrow {
+			htmlContent.WriteString(fmt.Sprintf("<li>%s (Quantity: %d)</li>", food.Name, food.Quantity))
+		}
+		htmlContent.WriteString("</ul>")
+	}
 
 	userEmails := make([]string, len(users))
 	for i, user := range users {
 		userEmails[i] = user.Email
 	}
+
 	emailFrom := os.Getenv("EMAIL_ADDRESS_FROM")
 	if emailFrom == "" {
 		return fmt.Errorf("EMAIL_ADDRESS_FROM not set")
@@ -68,8 +89,8 @@ func SendExpirationNotifications() error {
 	params := &resend.SendEmailRequest{
 		From:    emailFrom,
 		To:      userEmails,
-		Subject: "Food Expiration Alert - Today",
-		Html:    htmlContent,
+		Subject: "Food Expiration Alert - Today & Tomorrow",
+		Html:    htmlContent.String(),
 	}
 
 	sent, err := client.Emails.Send(params)

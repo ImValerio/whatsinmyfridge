@@ -7,6 +7,7 @@ import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
 import { InventoryList } from "../components/layout/InventoryList";
 import { BottomNavbar, TabType } from "../components/layout/BottomNavbar";
+import { getStatus } from "../lib/utils";
 
 export default function FridgeApp() {
   const [apiBaseUrl, setApiBaseUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
@@ -261,7 +262,7 @@ export default function FridgeApp() {
   const inventoryStats = useMemo(() => {
     const totalItems = containers.reduce((acc, c) => acc + (c.foods?.length || 0), 0);
     const expiredItems = containers.reduce((acc, c) =>
-      acc + (c.foods?.filter(f => f.expiration_date && new Date(f.expiration_date) < new Date()).length || 0), 0);
+      acc + (c.foods?.filter(f => getStatus(f.expiration_date)?.isExpired).length || 0), 0);
     return { totalItems, expiredItems };
   }, [containers]);
 

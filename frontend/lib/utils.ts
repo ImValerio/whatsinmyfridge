@@ -19,6 +19,8 @@ export const getStatus = (expirationDate: string | null) => {
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return { label: "Expired", color: "text-rose-600 bg-rose-50 border-rose-100", isExpired: true };
+  if (diffDays === 0) return { label: "Expires today", color: "text-amber-600 bg-amber-50 border-amber-100", isWarning: true };
+  if (diffDays === 1) return { label: "Expires tomorrow", color: "text-amber-600 bg-amber-50 border-amber-100", isWarning: true };
   if (diffDays <= 3) return { label: `Expires in ${diffDays}d`, color: "text-amber-600 bg-amber-50 border-amber-100", isWarning: true };
   return null;
 };
