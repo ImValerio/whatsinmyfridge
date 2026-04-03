@@ -1,5 +1,5 @@
 # Build stage
-FROM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
 
 WORKDIR /app
 
@@ -16,12 +16,14 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Copy the source code
 COPY . .
 
-# Build the application with cache mounts for the build cache
-# Use CGO_ENABLED=0 because glebarez/sqlite is pure Go
-# -ldflags="-s -w" strips debugging symbols for a smaller binary
+# Docker buildx automatically passes these arguments based on your --platform flag
+ARG TARGETOS
+ARG TARGETARCH
+
+# Build the application
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o main ./cmd/server/main.go
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -ldflags="-s -w" -o main ./cmd/server/main.go
 
 # Final stage
 FROM alpine:latest
@@ -30,7 +32,7 @@ RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-# Copy the binary from the builder stage
+# Copy the ARM64 binary from the builder stage
 COPY --from=builder /app/main .
 
 # Expose port 8080

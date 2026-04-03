@@ -102,7 +102,7 @@ func SendExpirationNotifications() error {
 
 	// Mark as communicated
 	foodIDs := make([]uint, len(expiringFoods))
-	for i, food := range expiringFoods {
+	for i, food := range expiringToday {
 		foodIDs[i] = food.ID
 	}
 	err = database.DB.Model(&models.Food{}).Where("id IN ?", foodIDs).Update("expiration_communicated", true).Error
