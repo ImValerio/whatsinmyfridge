@@ -15,7 +15,7 @@ func InitDB(dsn string) (*gorm.DB, error) {
 	}
 
 	// Auto Migrate the models
-	err = db.AutoMigrate(&models.Container{}, &models.Food{}, &models.User{}, &models.FoodLog{})
+	err = db.AutoMigrate(&models.Container{}, &models.Food{}, &models.User{}, &models.FoodLog{}, &models.NotificationLog{})
 	if err != nil {
 		return nil, err
 	}

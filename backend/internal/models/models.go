@@ -41,3 +41,10 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+// NotificationLog tracks daily successful notifications
+type NotificationLog struct {
+	ID       uint      `gorm:"primaryKey"`
+	SentDate string    `gorm:"uniqueIndex"` // Format: YYYY-MM-DD
+	SentAt   time.Time
+}
