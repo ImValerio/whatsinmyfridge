@@ -68,11 +68,21 @@ func main() {
 		{
 			foodGroup.POST("", handlers.CreateFood)
 			foodGroup.GET("", handlers.ListFood)
-			foodGroup.GET("/autocomplete", handlers.AutocompleteFood)
 			foodGroup.GET("/:id", handlers.GetFood)
 			foodGroup.PUT("/:id", handlers.UpdateFood)
 			foodGroup.DELETE("/:id", handlers.DeleteFood)
 			foodGroup.POST("/:id/open", handlers.OpenFood)
+		}
+
+		// Food Log routes
+		foodLogGroup := api.Group("/food-logs")
+		{
+			foodLogGroup.GET("/autocomplete", handlers.AutocompleteFood)
+			foodLogGroup.POST("", handlers.CreateFoodLog)
+			foodLogGroup.GET("", handlers.ListFoodLogs)
+			foodLogGroup.GET("/:id", handlers.GetFoodLog)
+			foodLogGroup.PUT("/:id", handlers.UpdateFoodLog)
+			foodLogGroup.DELETE("/:id", handlers.DeleteFoodLog)
 		}
 
 		// User routes

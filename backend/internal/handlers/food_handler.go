@@ -55,27 +55,6 @@ func logFoodName(name string) {
 	}
 }
 
-func AutocompleteFood(c *gin.Context) {
-	q := c.Query("q")
-	if q == "" {
-		c.JSON(http.StatusOK, []string{})
-		return
-	}
-
-	var foodLogs []models.FoodLog
-	if err := database.DB.Where("name LIKE ?", q+"%").Limit(10).Find(&foodLogs).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch autocomplete suggestions"})
-		return
-	}
-
-	suggestions := make([]string, len(foodLogs))
-	for i, log := range foodLogs {
-		suggestions[i] = log.Name
-	}
-
-	c.JSON(http.StatusOK, suggestions)
-}
-
 func CreateFood(c *gin.Context) {
 	var food models.Food
 	if err := c.ShouldBindJSON(&food); err != nil {

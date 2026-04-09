@@ -30,13 +30,12 @@ FROM alpine:latest
 
 RUN apk --no-cache add ca-certificates
 
-WORKDIR /root/
-
-# Copy the ARM64 binary from the builder stage
+WORKDIR /app
 COPY --from=builder /app/main .
 
-# Expose port 8080
+WORKDIR /root
+
 EXPOSE 8080
 
-# Command to run the executable
-CMD ["./main"]
+# 3. Run the binary using its absolute path
+CMD ["/app/main"]

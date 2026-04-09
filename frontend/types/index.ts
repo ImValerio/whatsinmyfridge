@@ -16,6 +16,11 @@ export interface FoodItem {
   updated_at?: string;
 }
 
+export interface FoodLog {
+  id: number;
+  name: string;
+}
+
 export interface Container {
   id: number;
   name: string;

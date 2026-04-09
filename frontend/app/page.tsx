@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
-import { User, FoodItem, Container } from "../types";
+import { User, FoodItem, Container, FoodLog } from "../types";
 import { Button, Input, Card } from "../components/ui";
 import { Sidebar } from "../components/layout/Sidebar";
 import { Header } from "../components/layout/Header";
@@ -16,6 +16,15 @@ export default function FridgeApp() {
   const [selectedContainerId, setSelectedContainerId] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<TabType>("food");
   const [isFoodFormOpen, setIsFoodFormOpen] = useState(false);
+
+  // FoodLog State
+  const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
+  const [foodLogName, setFoodLogName] = useState("");
+  const [editingFoodLog, setEditingFoodLog] = useState<FoodLog | null>(null);
+  const [isSubmittingFoodLog, setIsSubmittingFoodLog] = useState(false);
+  const [foodLogPage, setFoodLogPage] = useState(1);
+  const [foodLogLastPage, setFoodLogLastPage] = useState(1);
+  const [foodLogTotal, setFoodLogTotal] = useState(0);
 
   // Determine API URL on mount
   useEffect(() => {
@@ -84,6 +93,26 @@ export default function FridgeApp() {
 
     return () => clearTimeout(timer);
   }, [foodName, apiBaseUrl, editingFood]);
+
+  const fetchFoodLogs = useCallback(async (page: number) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/food-logs?page=${page}`);
+      if (res.ok) {
+        const result = await res.json();
+        // Extract data array, total and lastPage from the response format
+        setFoodLogs(result.data || []);
+        setFoodLogTotal(result.total || 0);
+        setFoodLogLastPage(result.lastPage || 1);
+      }
+    } catch (err) {
+      console.error("Error fetching food logs:", err);
+    }
+  }, [apiBaseUrl]);
+
+  // Handle page changes independently
+  useEffect(() => {
+    fetchFoodLogs(foodLogPage);
+  }, [foodLogPage, fetchFoodLogs]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -259,6 +288,45 @@ export default function FridgeApp() {
     }
   };
 
+  // --- FoodLog Handlers ---
+  const handleFoodLogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!foodLogName.trim()) return;
+
+    setIsSubmittingFoodLog(true);
+    const method = editingFoodLog ? "PUT" : "POST";
+    const url = editingFoodLog ? `${apiBaseUrl}/food-logs/${editingFoodLog.id}` : `${apiBaseUrl}/food-logs`;
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: foodLogName.trim() }),
+      });
+
+      if (!res.ok) throw new Error("Failed to save food suggestion");
+
+      setFoodLogName("");
+      setEditingFoodLog(null);
+      fetchFoodLogs(foodLogPage);
+    } catch (err) {
+      alert("Error saving food suggestion.");
+    } finally {
+      setIsSubmittingFoodLog(false);
+    }
+  };
+
+  const handleFoodLogDelete = async (id: number) => {
+    if (!confirm("Delete this food suggestion?")) return;
+    try {
+      const res = await fetch(`${apiBaseUrl}/food-logs/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete");
+      fetchFoodLogs(foodLogPage);
+    } catch (err) {
+      alert("Error deleting food suggestion.");
+    }
+  };
+
   const inventoryStats = useMemo(() => {
     const totalItems = containers.reduce((acc, c) => acc + (c.foods?.length || 0), 0);
     const expiredItems = containers.reduce((acc, c) =>
@@ -292,6 +360,21 @@ export default function FridgeApp() {
         setNewContainerName={setNewContainerName}
         onContainerSubmit={handleCreateContainer}
         isCreatingContainer={isCreatingContainer}
+        foodLogs={foodLogs}
+        foodLogName={foodLogName}
+        setFoodLogName={setFoodLogName}
+        onFoodLogSubmit={handleFoodLogSubmit}
+        onFoodLogEdit={(log) => { setEditingFoodLog(log); setFoodLogName(log.name); }}
+        onFoodLogDelete={handleFoodLogDelete}
+        editingFoodLog={editingFoodLog}
+        setEditingFoodLog={setEditingFoodLog}
+        isSubmittingFoodLog={isSubmittingFoodLog}
+        foodLogPage={foodLogPage}
+        foodLogLastPage={foodLogLastPage}
+        setFoodLogPage={(page) => {
+          setFoodLogPage(page);
+          fetchFoodLogs(page);
+        }}
       />
 
       <div className={`py-8 sm:py-16 px-4 sm:px-8 max-w-2xl mx-auto transition-all duration-500 ${isSidebarOpen ? 'sm:translate-x-40 blur-sm pointer-events-none' : ''}`}>
@@ -383,6 +466,17 @@ export default function FridgeApp() {
               <Card>
                 <h2 className="text-lg font-black mb-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  Food Suggestions
+                </h2>
+                <p className="text-sm text-gray-500 mb-6">Manage the list of common food names for autocomplete.</p>
+                <Button onClick={() => setIsSidebarOpen(true)} variant="secondary" className="w-full">
+                  Handle food suggestions
+                </Button>
+              </Card>
+
+              <Card>
+                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-400"></span>
                   Containers
                 </h2>
                 <form onSubmit={handleCreateContainer} className="space-y-4">

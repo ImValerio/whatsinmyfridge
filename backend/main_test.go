@@ -102,9 +102,9 @@ func TestCRUD(t *testing.T) {
 
 	// 5. Test Autocomplete
 	// Register Autocomplete route for test
-	api.GET("/food/autocomplete", handlers.AutocompleteFood)
+	api.GET("/food-logs/autocomplete", handlers.AutocompleteFood)
 
-	req, _ = http.NewRequest("GET", "/api/food/autocomplete?q=Ap", nil)
+	req, _ = http.NewRequest("GET", "/api/food-logs/autocomplete?q=Ap", nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
@@ -123,7 +123,7 @@ func TestCRUD(t *testing.T) {
 	assert.Equal(t, http.StatusCreated, w.Code)
 
 	// Test Autocomplete for Banana
-	req, _ = http.NewRequest("GET", "/api/food/autocomplete?q=Ban", nil)
+	req, _ = http.NewRequest("GET", "/api/food-logs/autocomplete?q=Ban", nil)
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
