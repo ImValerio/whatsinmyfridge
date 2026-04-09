@@ -8,6 +8,10 @@ import { Header } from "../components/layout/Header";
 import { InventoryList } from "../components/layout/InventoryList";
 import { BottomNavbar, TabType } from "../components/layout/BottomNavbar";
 import { getStatus } from "../lib/utils";
+import { FamilyManager } from "../components/settings/FamilyManager";
+import { SuggestionsManager } from "../components/settings/SuggestionsManager";
+import { ContainerManager } from "../components/settings/ContainerManager";
+import { BottomModal } from "../components/ui/BottomModal";
 
 export default function FridgeApp() {
   const [apiBaseUrl, setApiBaseUrl] = useState(process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api");
@@ -16,6 +20,11 @@ export default function FridgeApp() {
   const [selectedContainerId, setSelectedContainerId] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<TabType>("food");
   const [isFoodFormOpen, setIsFoodFormOpen] = useState(false);
+
+  // Mobile settings modal states
+  const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
+  const [isSuggestionsModalOpen, setIsSuggestionsModalOpen] = useState(false);
+  const [isContainersModalOpen, setIsContainersModalOpen] = useState(false);
 
   // FoodLog State
   const [foodLogs, setFoodLogs] = useState<FoodLog[]>([]);
@@ -458,7 +467,7 @@ export default function FridgeApp() {
                   Family Management
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">Manage members who will receive notification.</p>
-                <Button onClick={() => setIsSidebarOpen(true)} className="w-full">
+                <Button onClick={() => setIsFamilyModalOpen(true)} className="w-full">
                   Handle familiy members
                 </Button>
               </Card>
@@ -469,7 +478,7 @@ export default function FridgeApp() {
                   Food Suggestions
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">Manage the list of common food names for autocomplete.</p>
-                <Button onClick={() => setIsSidebarOpen(true)} variant="secondary" className="w-full">
+                <Button onClick={() => setIsSuggestionsModalOpen(true)} variant="secondary" className="w-full">
                   Handle food suggestions
                 </Button>
               </Card>
@@ -479,19 +488,10 @@ export default function FridgeApp() {
                   <span className="w-2 h-2 rounded-full bg-orange-400"></span>
                   Containers
                 </h2>
-                <form onSubmit={handleCreateContainer} className="space-y-4">
-                  <Input
-                    value={newContainerName}
-                    onChange={(e) => setNewContainerName(e.target.value)}
-                    placeholder="New Space Name"
-                    required
-                    maxLength={30}
-                    disabled={isCreatingContainer}
-                  />
-                  <Button type="submit" isLoading={isCreatingContainer} variant="secondary" className="w-full">
-                    Add Container
-                  </Button>
-                </form>
+                <p className="text-sm text-gray-500 mb-6">Manage your fridge storage spaces.</p>
+                <Button onClick={() => setIsContainersModalOpen(true)} variant="secondary" className="w-full">
+                  Handle containers
+                </Button>
               </Card>
             </div>
           )}
@@ -732,6 +732,64 @@ export default function FridgeApp() {
           </div>
         </div>
       )}
+
+      <BottomModal
+        isOpen={isFamilyModalOpen}
+        onClose={() => setIsFamilyModalOpen(false)}
+        title="Family Members"
+      >
+        <FamilyManager
+          users={users}
+          userName={userName}
+          userEmail={userEmail}
+          setUserName={setUserName}
+          setUserEmail={setUserEmail}
+          onUserSubmit={handleUserSubmit}
+          onUserEdit={(u) => { setEditingUser(u); setUserName(u.name); setUserEmail(u.email); }}
+          onUserDelete={handleUserDelete}
+          editingUser={editingUser}
+          setEditingUser={setEditingUser}
+          isSubmitting={isSubmittingUser}
+        />
+      </BottomModal>
+
+      <BottomModal
+        isOpen={isSuggestionsModalOpen}
+        onClose={() => setIsSuggestionsModalOpen(false)}
+        title="Food Suggestions"
+      >
+        <SuggestionsManager
+          foodLogs={foodLogs}
+          foodLogName={foodLogName}
+          setFoodLogName={setFoodLogName}
+          onFoodLogSubmit={handleFoodLogSubmit}
+          onFoodLogEdit={(log) => { setEditingFoodLog(log); setFoodLogName(log.name); }}
+          onFoodLogDelete={handleFoodLogDelete}
+          editingFoodLog={editingFoodLog}
+          setEditingFoodLog={setEditingFoodLog}
+          isSubmittingFoodLog={isSubmittingFoodLog}
+          foodLogPage={foodLogPage}
+          foodLogLastPage={foodLogLastPage}
+          foodLogTotal={foodLogTotal}
+          setFoodLogPage={(page) => {
+            setFoodLogPage(page);
+            fetchFoodLogs(page);
+          }}
+        />
+      </BottomModal>
+
+      <BottomModal
+        isOpen={isContainersModalOpen}
+        onClose={() => setIsContainersModalOpen(false)}
+        title="Containers"
+      >
+        <ContainerManager
+          newContainerName={newContainerName}
+          setNewContainerName={setNewContainerName}
+          onContainerSubmit={handleCreateContainer}
+          isCreatingContainer={isCreatingContainer}
+        />
+      </BottomModal>
 
       <BottomNavbar activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
