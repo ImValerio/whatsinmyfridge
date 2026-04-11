@@ -11,6 +11,7 @@ import { getStatus } from "../lib/utils";
 import { FamilyManager } from "../components/settings/FamilyManager";
 import { SuggestionsManager } from "../components/settings/SuggestionsManager";
 import { ContainerManager } from "../components/settings/ContainerManager";
+import { SettingsMenu } from "../components/settings/SettingsMenu";
 import { BottomModal } from "../components/ui/BottomModal";
 
 export default function FridgeApp() {
