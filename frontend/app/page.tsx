@@ -354,36 +354,9 @@ export default function FridgeApp() {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        users={users}
-        userName={userName}
-        userEmail={userEmail}
-        setUserName={setUserName}
-        setUserEmail={setUserEmail}
-        onUserSubmit={handleUserSubmit}
-        onUserEdit={(u) => { setEditingUser(u); setUserName(u.name); setUserEmail(u.email); }}
-        onUserDelete={handleUserDelete}
-        editingUser={editingUser}
-        setEditingUser={setEditingUser}
-        isSubmitting={isSubmittingUser}
-        newContainerName={newContainerName}
-        setNewContainerName={setNewContainerName}
-        onContainerSubmit={handleCreateContainer}
-        isCreatingContainer={isCreatingContainer}
-        foodLogs={foodLogs}
-        foodLogName={foodLogName}
-        setFoodLogName={setFoodLogName}
-        onFoodLogSubmit={handleFoodLogSubmit}
-        onFoodLogEdit={(log) => { setEditingFoodLog(log); setFoodLogName(log.name); }}
-        onFoodLogDelete={handleFoodLogDelete}
-        editingFoodLog={editingFoodLog}
-        setEditingFoodLog={setEditingFoodLog}
-        isSubmittingFoodLog={isSubmittingFoodLog}
-        foodLogPage={foodLogPage}
-        foodLogLastPage={foodLogLastPage}
-        setFoodLogPage={(page) => {
-          setFoodLogPage(page);
-          fetchFoodLogs(page);
-        }}
+        onOpenFamily={() => { setIsFamilyModalOpen(true); setIsSidebarOpen(false); }}
+        onOpenSuggestions={() => { setIsSuggestionsModalOpen(true); setIsSidebarOpen(false); }}
+        onOpenContainers={() => { setIsContainersModalOpen(true); setIsSidebarOpen(false); }}
       />
 
       <div className={`py-8 sm:py-16 px-4 sm:px-8 max-w-2xl mx-auto transition-all duration-500 ${isSidebarOpen ? 'sm:translate-x-40 blur-sm pointer-events-none' : ''}`}>
@@ -458,41 +431,17 @@ export default function FridgeApp() {
           )}
 
           {activeTab === "settings" && (
-            <div className="space-y-8">
-              <h1 className="text-3xl font-black text-[#1C1C1E]">Settings</h1>
+            <div className="space-y-6 pb-10">
+              <div className="mb-10">
+                <h1 className="text-4xl font-black text-[#1C1C1E] tracking-tight">Settings</h1>
+                <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">Personalize your fridge experience</p>
+              </div>
 
-              <Card>
-                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                  Family Management
-                </h2>
-                <p className="text-sm text-gray-500 mb-6">Manage members who will receive notification.</p>
-                <Button onClick={() => setIsFamilyModalOpen(true)} className="w-full">
-                  Handle familiy members
-                </Button>
-              </Card>
-
-              <Card>
-                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-                  Food Suggestions
-                </h2>
-                <p className="text-sm text-gray-500 mb-6">Manage the list of common food names for autocomplete.</p>
-                <Button onClick={() => setIsSuggestionsModalOpen(true)} variant="secondary" className="w-full">
-                  Handle food suggestions
-                </Button>
-              </Card>
-
-              <Card>
-                <h2 className="text-lg font-black mb-4 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-orange-400"></span>
-                  Containers
-                </h2>
-                <p className="text-sm text-gray-500 mb-6">Manage your fridge storage spaces.</p>
-                <Button onClick={() => setIsContainersModalOpen(true)} variant="secondary" className="w-full">
-                  Handle containers
-                </Button>
-              </Card>
+              <SettingsMenu 
+                onOpenFamily={() => setIsFamilyModalOpen(true)}
+                onOpenSuggestions={() => setIsSuggestionsModalOpen(true)}
+                onOpenContainers={() => setIsContainersModalOpen(true)}
+              />
             </div>
           )}
         </div>
