@@ -375,7 +375,7 @@ export default function FridgeApp() {
         {/* Mobile Views */}
         <div className="sm:hidden">
           {activeTab === "food" && (
-            <div className="space-y-6">
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out-quint">
               <div className="flex justify-between items-center">
                 {containers.length > 1 ? (
                   <select
@@ -416,7 +416,7 @@ export default function FridgeApp() {
           )}
 
           {activeTab === "stats" && (
-            <div className="space-y-8">
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out-quint">
               <h1 className="text-3xl font-black text-[#1C1C1E]">Statistics</h1>
               <div className="grid gap-4">
                 <div className="bg-white px-6 py-8 rounded-[2rem] shadow-sm border border-gray-100 text-center">
@@ -432,7 +432,7 @@ export default function FridgeApp() {
           )}
 
           {activeTab === "settings" && (
-            <div className="space-y-6 pb-10">
+            <div className="space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out-quint">
               <div className="mb-10">
                 <h1 className="text-4xl font-black text-[#1C1C1E] tracking-tight">Settings</h1>
                 <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">Personalize your fridge experience</p>
@@ -597,91 +597,83 @@ export default function FridgeApp() {
       )}
 
       {/* Mobile Food Form Modal */}
-      {isFoodFormOpen && (
-        <div className="fixed inset-0 bg-[#1C1C1E]/60 backdrop-blur-md z-[60] flex items-end sm:hidden">
-          <div className="w-full bg-white rounded-t-[3rem] p-8 animate-in slide-in-from-bottom duration-300">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-black text-[#1C1C1E]">{editingFood ? "Edit Food" : "Add Food"}</h2>
-              <button onClick={() => setIsFoodFormOpen(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <form onSubmit={handleFoodSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Storage</label>
-                <select
-                  value={selectedContainerId}
-                  onChange={(e) => setSelectedContainerId(Number(e.target.value))}
-                  className="w-full px-6 py-5 bg-gray-50 border-none rounded-[1.5rem] focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold appearance-none"
-                  required
-                >
-                  <option value="" disabled>Choose storage...</option>
-                  {containers.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Item Name</label>
-                <div className="relative">
-                  <Input
-                    value={foodName}
-                    onChange={(e) => setFoodName(e.target.value)}
-                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
-                    placeholder="e.g. Greek Yogurt"
-                    required
-                  />
-                  {suggestions.length > 0 && (
-                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100]">
-                      {suggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => { setFoodName(suggestion); setSuggestions([]); }}
-                          className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Quantity</label>
-                  <Input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
-                    min="1"
-                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Expires</label>
-                  <Input
-                    type="date"
-                    value={expirationDate}
-                    onChange={(e) => setExpirationDate(e.target.value)}
-                    className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" isLoading={isSubmittingFood} className="w-full py-6 rounded-[1.5rem] text-lg">
-                {editingFood ? "Save Changes" : "Add to Fridge"}
-              </Button>
-            </form>
+      <BottomModal
+        isOpen={isFoodFormOpen}
+        onClose={() => setIsFoodFormOpen(false)}
+        title={editingFood ? "Edit Food" : "Add Food"}
+      >
+        <form onSubmit={handleFoodSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Storage</label>
+            <select
+              value={selectedContainerId}
+              onChange={(e) => setSelectedContainerId(Number(e.target.value))}
+              className="w-full px-6 py-5 bg-gray-50 border-none rounded-[1.5rem] focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold appearance-none"
+              required
+            >
+              <option value="" disabled>Choose storage...</option>
+              {containers.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Item Name</label>
+            <div className="relative">
+              <Input
+                value={foodName}
+                onChange={(e) => setFoodName(e.target.value)}
+                className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+                placeholder="e.g. Greek Yogurt"
+                required
+              />
+              {suggestions.length > 0 && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100]">
+                  {suggestions.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => { setFoodName(suggestion); setSuggestions([]); }}
+                      className="w-full px-4 py-3 text-left text-sm font-bold text-gray-700 hover:bg-emerald-50"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Quantity</label>
+              <Input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                min="1"
+                className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Expires</label>
+              <Input
+                type="date"
+                value={expirationDate}
+                onChange={(e) => setExpirationDate(e.target.value)}
+                className="bg-gray-50 border-none rounded-[1.5rem] py-5 px-6"
+              />
+            </div>
+          </div>
+
+          <Button type="submit" isLoading={isSubmittingFood} className="w-full py-6 rounded-[1.5rem] text-lg">
+            {editingFood ? "Save Changes" : "Add to Fridge"}
+          </Button>
+        </form>
+      </BottomModal>
+
 
       <BottomModal
         isOpen={isFamilyModalOpen}
