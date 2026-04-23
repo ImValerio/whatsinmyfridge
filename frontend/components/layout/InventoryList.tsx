@@ -58,7 +58,7 @@ const FoodItemRow = ({
               value={openDays}
               onChange={(e) => setOpenDays(Number(e.target.value))}
               min="1"
-              className="w-12 px-2 py-2 bg-transparent border-none focus:ring-0 text-emerald-700 text-sm font-bold text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-12 px-2 py-2 bg-transparent border-none focus:ring-0 text-emerald-700 text-base font-bold text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               title="Days until expiration"
             />
             <button 

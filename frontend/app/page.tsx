@@ -470,7 +470,7 @@ export default function FridgeApp() {
                 <select
                   value={selectedContainerId}
                   onChange={(e) => setSelectedContainerId(Number(e.target.value))}
-                  className="w-full px-4 py-4 bg-white/10 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-white appearance-none text-sm"
+                  className="w-full px-4 py-4 bg-white/10 border-none rounded-2xl focus:ring-2 focus:ring-emerald-500 outline-none text-white appearance-none text-base"
                   required
                   disabled={isSubmittingFood}
                 >
@@ -620,7 +620,7 @@ export default function FridgeApp() {
             <select
               value={selectedContainerId}
               onChange={(e) => setSelectedContainerId(Number(e.target.value))}
-              className="w-full px-6 py-5 bg-gray-50 border-none rounded-[1.5rem] focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-bold appearance-none"
+              className="w-full px-6 py-5 bg-gray-50 border-none rounded-[1.5rem] focus:ring-2 focus:ring-emerald-500 outline-none text-base font-bold appearance-none"
               required
             >
               <option value="" disabled>Choose storage...</option>
