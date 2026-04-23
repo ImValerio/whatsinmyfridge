@@ -17,7 +17,7 @@ func AutocompleteFood(c *gin.Context) {
 	}
 
 	var foodLogs []models.FoodLog
-	if err := database.DB.Where("name LIKE ?", q+"%").Limit(10).Find(&foodLogs).Error; err != nil {
+	if err := database.DB.Where("name LIKE ?", q+"%").Limit(3).Find(&foodLogs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch autocomplete suggestions"})
 		return
 	}
@@ -71,11 +71,11 @@ func ListFoodLogs(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"data":      foodLogs,
-		"total":     total,
-		"page":      page,
-		"pageSize":  pageSize,
-		"lastPage":  (total + int64(pageSize) - 1) / int64(pageSize),
+		"data":     foodLogs,
+		"total":    total,
+		"page":     page,
+		"pageSize": pageSize,
+		"lastPage": (total + int64(pageSize) - 1) / int64(pageSize),
 	})
 }
 
