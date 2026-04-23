@@ -86,7 +86,7 @@ export default function FridgeApp() {
       if (foodName.trim().length >= 2 && !editingFood) {
         try {
           setIsSearching(true);
-          const res = await fetch(`${apiBaseUrl}/food/autocomplete?q=${encodeURIComponent(foodName.trim())}`);
+          const res = await fetch(`${apiBaseUrl}/food-logs/autocomplete?q=${encodeURIComponent(foodName.trim())}`);
           if (res.ok) {
             const data = await res.json();
             setSuggestions(data || []);
@@ -449,7 +449,7 @@ export default function FridgeApp() {
                 <p className="text-gray-400 font-bold text-xs uppercase tracking-widest mt-2">Personalize your fridge experience</p>
               </div>
 
-              <SettingsMenu 
+              <SettingsMenu
                 onOpenFamily={() => setIsFamilyModalOpen(true)}
                 onOpenSuggestions={() => setIsSuggestionsModalOpen(true)}
                 onOpenContainers={() => setIsContainersModalOpen(true)}
