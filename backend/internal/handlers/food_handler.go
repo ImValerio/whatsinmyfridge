@@ -143,3 +143,21 @@ func DeleteFood(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Food deleted successfully"})
 }
+
+// ToggleFoodFrozen toggles the is_frozen flag of a food item
+func ToggleFoodFrozen(c *gin.Context) {
+	id := c.Param("id")
+	var food models.Food
+	if err := database.DB.First(&food, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Food not found"})
+		return
+	}
+
+	food.IsFrozen = !food.IsFrozen
+	if err := database.DB.Save(&food).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, food)
+}

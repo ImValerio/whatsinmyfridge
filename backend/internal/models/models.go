@@ -22,6 +22,7 @@ type Food struct {
 	IsOpened              bool       `json:"is_opened"`
 	ContainerID           uint       `json:"container_id" binding:"required"`
 	ExpirationCommunicated bool       `json:"expiration_communicated" gorm:"default:false"`
+	IsFrozen              bool       `json:"is_frozen" gorm:"default:false"`
 	CreatedAt             time.Time  `json:"created_at"`
 	UpdatedAt             time.Time  `json:"updated_at"`
 }

@@ -72,6 +72,7 @@ func main() {
 			foodGroup.PUT("/:id", handlers.UpdateFood)
 			foodGroup.DELETE("/:id", handlers.DeleteFood)
 			foodGroup.POST("/:id/open", handlers.OpenFood)
+			foodGroup.POST("/:id/frozen", handlers.ToggleFoodFrozen)
 		}
 
 		// Food Log routes

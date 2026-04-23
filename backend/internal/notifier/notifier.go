@@ -49,8 +49,9 @@ func SendExpirationNotifications() error {
 	// We look for everything expiring today or tomorrow.
 	// We specifically want items expiring today that haven't been communicated yet.
 	// But we also include tomorrow's items for the summary.
+	// We exclude frozen foods.
 	var expiringFoods []models.Food
-	err = database.DB.Where("expiration_date >= ? AND expiration_date < ?", todayStart, tomorrowEnd).Find(&expiringFoods).Error
+	err = database.DB.Where("expiration_date >= ? AND expiration_date < ? AND is_frozen = ?", todayStart, tomorrowEnd, false).Find(&expiringFoods).Error
 	if err != nil {
 		return fmt.Errorf("failed to query expiring foods: %v", err)
 	}
