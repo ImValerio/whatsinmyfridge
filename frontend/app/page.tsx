@@ -254,6 +254,16 @@ export default function FridgeApp() {
     }
   };
 
+  const handleFoodFreeze = async (id: number) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/food/${id}/frozen`, { method: "POST" });
+      if (!res.ok) throw new Error("Failed to toggle frozen state");
+      fetchData();
+    } catch (err) {
+      alert("Error toggling frozen state.");
+    }
+  };
+
   const handleFoodEdit = (item: FoodItem) => {
     setEditingFood(item);
     setFoodName(item.name);
@@ -408,6 +418,7 @@ export default function FridgeApp() {
                   onFoodOpen={handleFoodOpen}
                   onFoodEdit={handleFoodEdit}
                   onFoodDelete={handleFoodDelete}
+                  onFoodFreeze={handleFoodFreeze}
                   onContainerDelete={handleContainerDelete}
                   hideHeader={true}
                 />
@@ -573,6 +584,7 @@ export default function FridgeApp() {
                 onFoodOpen={handleFoodOpen}
                 onFoodEdit={handleFoodEdit}
                 onFoodDelete={handleFoodDelete}
+                onFoodFreeze={handleFoodFreeze}
                 onContainerDelete={handleContainerDelete}
               />
             )}

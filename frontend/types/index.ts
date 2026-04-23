@@ -12,6 +12,7 @@ export interface FoodItem {
   quantity: number;
   expiration_date: string | null;
   container_id: number;
+  is_frozen: boolean;
   created_at?: string;
   updated_at?: string;
 }
