@@ -350,7 +350,7 @@ export default function FridgeApp() {
   const inventoryStats = useMemo(() => {
     const totalItems = containers.reduce((acc, c) => acc + (c.foods?.length || 0), 0);
     const expiredItems = containers.reduce((acc, c) =>
-      acc + (c.foods?.filter(f => getStatus(f.expiration_date)?.isExpired).length || 0), 0);
+      acc + (c.foods?.filter(f => !f.is_frozen && getStatus(f.expiration_date)?.isExpired).length || 0), 0);
     return { totalItems, expiredItems };
   }, [containers]);
 
