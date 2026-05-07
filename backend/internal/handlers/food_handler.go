@@ -80,9 +80,36 @@ func CreateFood(c *gin.Context) {
 }
 
 func ListFood(c *gin.Context) {
-	var food []models.Food
-	database.DB.Find(&food)
-	c.JSON(http.StatusOK, food)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "10"))
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	var foods []models.Food
+	var total int64
+
+	database.DB.Model(&models.Food{}).Count(&total)
+
+	// Order by:
+	// 1. is_frozen ASC (false first)
+	// 2. expiration_date IS NULL ASC (not null first)
+	// 3. expiration_date ASC
+	database.DB.Order("is_frozen ASC, (expiration_date IS NULL) ASC, expiration_date ASC").Limit(pageSize).Offset(offset).Find(&foods)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":      foods,
+		"total":     total,
+		"page":      page,
+		"pageSize":  pageSize,
+		"last_page": (total + int64(pageSize) - 1) / int64(pageSize),
+	})
 }
 
 func GetFood(c *gin.Context) {

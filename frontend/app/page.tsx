@@ -36,6 +36,12 @@ export default function FridgeApp() {
   const [foodLogLastPage, setFoodLogLastPage] = useState(1);
   const [foodLogTotal, setFoodLogTotal] = useState(0);
 
+  // Food State (Paginated)
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [foodPage, setFoodPage] = useState(1);
+  const [foodLastPage, setFoodLastPage] = useState(1);
+  const [foodTotal, setFoodTotal] = useState(0);
+
   // Determine API URL on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -104,6 +110,24 @@ export default function FridgeApp() {
     return () => clearTimeout(timer);
   }, [foodName, apiBaseUrl, editingFood]);
 
+  const fetchFoods = useCallback(async (page: number) => {
+    try {
+      const res = await fetch(`${apiBaseUrl}/food?page=${page}&pageSize=3`);
+      if (res.ok) {
+        const result = await res.json();
+        setFoods(result.data || []);
+        setFoodTotal(result.total || 0);
+        setFoodLastPage(result.last_page || 1);
+      }
+    } catch (err) {
+      console.error("Error fetching foods:", err);
+    }
+  }, [apiBaseUrl]);
+
+  useEffect(() => {
+    fetchFoods(foodPage);
+  }, [foodPage, fetchFoods]);
+
   const fetchFoodLogs = useCallback(async (page: number) => {
     try {
       const res = await fetch(`${apiBaseUrl}/food-logs?page=${page}`);
@@ -144,6 +168,8 @@ export default function FridgeApp() {
         setSelectedContainerId(contData[0].id);
       }
 
+      await fetchFoods(foodPage);
+
       setError(null);
     } catch (err) {
       console.error(err);
@@ -151,7 +177,7 @@ export default function FridgeApp() {
     } finally {
       setLoading(false);
     }
-  }, [selectedContainerId, apiBaseUrl]);
+  }, [selectedContainerId, apiBaseUrl, fetchFoods, foodPage]);
 
   useEffect(() => {
     fetchData();
@@ -354,10 +380,23 @@ export default function FridgeApp() {
     return { totalItems, expiredItems };
   }, [containers]);
 
+  const containersWithPaginatedFoods = useMemo(() => {
+    const grouped: { [key: number]: FoodItem[] } = {};
+    foods.forEach(f => {
+      if (!grouped[f.container_id]) grouped[f.container_id] = [];
+      grouped[f.container_id].push(f);
+    });
+
+    return containers.map(c => ({
+      ...c,
+      foods: grouped[c.id] || []
+    })).filter(c => c.foods.length > 0);
+  }, [containers, foods]);
+
   const filteredContainers = useMemo(() => {
-    if (selectedContainerId === "") return containers;
-    return containers.filter(c => c.id === selectedContainerId);
-  }, [containers, selectedContainerId]);
+    if (selectedContainerId === "") return containersWithPaginatedFoods;
+    return containersWithPaginatedFoods.filter(c => c.id === selectedContainerId);
+  }, [containersWithPaginatedFoods, selectedContainerId]);
 
   return (
     <div className="min-h-screen bg-[#FDFCF9] text-[#2C2C2E] font-sans selection:bg-emerald-100 relative overflow-x-hidden pb-20 sm:pb-0">
@@ -393,6 +432,7 @@ export default function FridgeApp() {
                     onChange={(e) => setSelectedContainerId(Number(e.target.value))}
                     className="text-3xl font-black text-[#1C1C1E] bg-transparent border-none focus:ring-0 outline-none p-0 appearance-none"
                   >
+                    <option value="">All Fridges</option>
                     {containers.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -408,20 +448,49 @@ export default function FridgeApp() {
                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                   <div className="w-8 h-8 border-3 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
                 </div>
-              ) : containers.length === 0 ? (
+              ) : foods.length === 0 ? (
                 <div className="py-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
-                  <p className="text-gray-400 font-medium text-sm">Add a container in Settings!</p>
+                  <p className="text-gray-400 font-medium text-sm">Add a container or food in Settings!</p>
                 </div>
               ) : (
-                <InventoryList
-                  containers={filteredContainers}
-                  onFoodOpen={handleFoodOpen}
-                  onFoodEdit={handleFoodEdit}
-                  onFoodDelete={handleFoodDelete}
-                  onFoodFreeze={handleFoodFreeze}
-                  onContainerDelete={handleContainerDelete}
-                  hideHeader={true}
-                />
+                <>
+                  <InventoryList
+                    containers={filteredContainers}
+                    onFoodOpen={handleFoodOpen}
+                    onFoodEdit={handleFoodEdit}
+                    onFoodDelete={handleFoodDelete}
+                    onFoodFreeze={handleFoodFreeze}
+                    onContainerDelete={handleContainerDelete}
+                    hideHeader={true}
+                  />
+
+                  {/* Food Pagination Controls */}
+                  {foodTotal > 3 && (
+                    <div className="mt-6 flex items-center justify-between bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFoodPage(Math.max(1, foodPage - 1))}
+                        disabled={foodPage <= 1}
+                        className="px-3"
+                      >
+                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                        Prev
+                      </Button>
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Page {foodPage} / {foodLastPage}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setFoodPage(foodPage + 1)}
+                        disabled={foodPage >= foodLastPage}
+                        className="px-3"
+                      >
+                        Next
+                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                      </Button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -573,20 +642,52 @@ export default function FridgeApp() {
                 <p className="text-rose-600 font-bold mb-4 text-sm">{error}</p>
                 <Button variant="danger" onClick={fetchData}>Retry Sync</Button>
               </div>
-            ) : containers.length === 0 ? (
+            ) : foods.length === 0 ? (
               <div className="p-20 text-center bg-white rounded-[2rem] border border-dashed border-gray-200">
                 <span className="text-5xl mb-6 block grayscale opacity-50">🧊</span>
                 <p className="text-gray-400 font-medium text-sm">Your fridge is looking a bit lonely.<br />Add a container to get started!</p>
               </div>
             ) : (
-              <InventoryList
-                containers={containers}
-                onFoodOpen={handleFoodOpen}
-                onFoodEdit={handleFoodEdit}
-                onFoodDelete={handleFoodDelete}
-                onFoodFreeze={handleFoodFreeze}
-                onContainerDelete={handleContainerDelete}
-              />
+              <>
+                <InventoryList
+                  containers={containersWithPaginatedFoods}
+                  onFoodOpen={handleFoodOpen}
+                  onFoodEdit={handleFoodEdit}
+                  onFoodDelete={handleFoodDelete}
+                  onFoodFreeze={handleFoodFreeze}
+                  onContainerDelete={handleContainerDelete}
+                />
+
+                {/* Food Pagination Controls */}
+                {foodTotal > 3 && (
+                  <div className="mt-8 flex items-center justify-between bg-white px-6 py-4 rounded-[2rem] border border-gray-100 shadow-sm">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFoodPage(Math.max(1, foodPage - 1))}
+                      disabled={foodPage <= 1}
+                      className="px-4 font-bold"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                      Previous
+                    </Button>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Inventory Page</span>
+                      <span className="text-sm font-black text-[#1C1C1E]">{foodPage} <span className="text-gray-300">/</span> {foodLastPage}</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setFoodPage(foodPage + 1)}
+                      disabled={foodPage >= foodLastPage}
+                      className="px-4 font-bold"
+                    >
+                      Next
+                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </div>
