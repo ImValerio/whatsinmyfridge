@@ -41,8 +41,9 @@ export default function FridgeApp() {
   const [foodPage, setFoodPage] = useState(1);
   const [foodLastPage, setFoodLastPage] = useState(1);
   const [foodTotal, setFoodTotal] = useState(0);
+  const [pageSize, setPageSize] = useState(3);
 
-  // Determine API URL on mount
+  // Determine API URL on mount and set pageSize
   useEffect(() => {
     if (typeof window !== "undefined") {
       const hostname = window.location.hostname;
@@ -59,6 +60,9 @@ export default function FridgeApp() {
           setApiBaseUrl(`http://${hostname}:8080/api`);
         }
       }
+
+      // Set pageSize based on screen width
+      setPageSize(window.innerWidth < 640 ? 3 : 5);
     }
   }, []);
 
@@ -112,7 +116,7 @@ export default function FridgeApp() {
 
   const fetchFoods = useCallback(async (page: number) => {
     try {
-      const res = await fetch(`${apiBaseUrl}/food?page=${page}&pageSize=3`);
+      const res = await fetch(`${apiBaseUrl}/food?page=${page}&pageSize=${pageSize}`);
       if (res.ok) {
         const result = await res.json();
         setFoods(result.data || []);
@@ -122,7 +126,7 @@ export default function FridgeApp() {
     } catch (err) {
       console.error("Error fetching foods:", err);
     }
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, pageSize]);
 
   useEffect(() => {
     fetchFoods(foodPage);
@@ -453,44 +457,15 @@ export default function FridgeApp() {
                   <p className="text-gray-400 font-medium text-sm">Add a container or food in Settings!</p>
                 </div>
               ) : (
-                <>
-                  <InventoryList
-                    containers={filteredContainers}
-                    onFoodOpen={handleFoodOpen}
-                    onFoodEdit={handleFoodEdit}
-                    onFoodDelete={handleFoodDelete}
-                    onFoodFreeze={handleFoodFreeze}
-                    onContainerDelete={handleContainerDelete}
-                    hideHeader={true}
-                  />
-
-                  {/* Food Pagination Controls */}
-                  {foodTotal > 3 && (
-                    <div className="mt-6 flex items-center justify-between bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFoodPage(Math.max(1, foodPage - 1))}
-                        disabled={foodPage <= 1}
-                        className="px-3"
-                      >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-                        Prev
-                      </Button>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Page {foodPage} / {foodLastPage}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setFoodPage(foodPage + 1)}
-                        disabled={foodPage >= foodLastPage}
-                        className="px-3"
-                      >
-                        Next
-                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
-                      </Button>
-                    </div>
-                  )}
-                </>
+                <InventoryList
+                  containers={filteredContainers}
+                  onFoodOpen={handleFoodOpen}
+                  onFoodEdit={handleFoodEdit}
+                  onFoodDelete={handleFoodDelete}
+                  onFoodFreeze={handleFoodFreeze}
+                  onContainerDelete={handleContainerDelete}
+                  hideHeader={true}
+                />
               )}
             </div>
           )}
@@ -624,11 +599,13 @@ export default function FridgeApp() {
           </div>
 
           <section className="space-y-8 mt-4">
-            <div className="flex justify-between items-end px-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
               <h2 className="text-4xl font-black text-[#1C1C1E] tracking-tight">Your Inventory</h2>
-              <Button variant="secondary" size="sm" onClick={fetchData} className="rounded-full">
-                Refresh Sync
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button variant="secondary" size="sm" onClick={fetchData} className="rounded-full px-6 py-5">
+                  Refresh Sync
+                </Button>
+              </div>
             </div>
 
             {loading ? (
@@ -648,46 +625,14 @@ export default function FridgeApp() {
                 <p className="text-gray-400 font-medium text-sm">Your fridge is looking a bit lonely.<br />Add a container to get started!</p>
               </div>
             ) : (
-              <>
-                <InventoryList
-                  containers={containersWithPaginatedFoods}
-                  onFoodOpen={handleFoodOpen}
-                  onFoodEdit={handleFoodEdit}
-                  onFoodDelete={handleFoodDelete}
-                  onFoodFreeze={handleFoodFreeze}
-                  onContainerDelete={handleContainerDelete}
-                />
-
-                {/* Food Pagination Controls */}
-                {foodTotal > 3 && (
-                  <div className="mt-8 flex items-center justify-between bg-white px-6 py-4 rounded-[2rem] border border-gray-100 shadow-sm">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFoodPage(Math.max(1, foodPage - 1))}
-                      disabled={foodPage <= 1}
-                      className="px-4 font-bold"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-                      Previous
-                    </Button>
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Inventory Page</span>
-                      <span className="text-sm font-black text-[#1C1C1E]">{foodPage} <span className="text-gray-300">/</span> {foodLastPage}</span>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setFoodPage(foodPage + 1)}
-                      disabled={foodPage >= foodLastPage}
-                      className="px-4 font-bold"
-                    >
-                      Next
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
-                    </Button>
-                  </div>
-                )}
-              </>
+              <InventoryList
+                containers={containersWithPaginatedFoods}
+                onFoodOpen={handleFoodOpen}
+                onFoodEdit={handleFoodEdit}
+                onFoodDelete={handleFoodDelete}
+                onFoodFreeze={handleFoodFreeze}
+                onContainerDelete={handleContainerDelete}
+              />
             )}
           </section>
         </div>
@@ -696,6 +641,38 @@ export default function FridgeApp() {
           <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Keep it fresh • Reduce waste • Save money</p>
         </footer>
       </div>
+
+      {/* Floating Side Pagination */}
+      {foodTotal > pageSize && (activeTab === "food" || (typeof window !== "undefined" && window.innerWidth >= 640)) && (
+        <>
+          <button
+            onClick={() => setFoodPage(Math.max(1, foodPage - 1))}
+            disabled={foodPage <= 1}
+            className="fixed left-4 top-1/2 -translate-y-1/2 z-40 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full shadow-2xl border border-gray-100 flex items-center justify-center text-emerald-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all active:scale-90 hover:bg-white animate-in fade-in slide-in-from-left-4 duration-500"
+            title="Previous Page"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          
+          <button
+            onClick={() => setFoodPage(foodPage + 1)}
+            disabled={foodPage >= foodLastPage}
+            className="fixed right-4 top-1/2 -translate-y-1/2 z-40 w-12 h-12 bg-white/80 backdrop-blur-md rounded-full shadow-2xl border border-gray-100 flex items-center justify-center text-emerald-600 disabled:opacity-20 disabled:cursor-not-allowed transition-all active:scale-90 hover:bg-white animate-in fade-in slide-in-from-right-4 duration-500"
+            title="Next Page"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          {/* Floating Page Indicator */}
+          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 bg-white/80 backdrop-blur-md px-5 py-2 rounded-full border border-gray-100 shadow-xl text-[10px] font-black text-emerald-800 uppercase tracking-[0.2em] animate-in fade-in slide-in-from-bottom-4 duration-500 sm:bottom-8">
+            Page {foodPage} <span className="text-emerald-300 mx-1">/</span> {foodLastPage}
+          </div>
+        </>
+      )}
 
       {/* Mobile FAB */}
       {activeTab === "food" && (
