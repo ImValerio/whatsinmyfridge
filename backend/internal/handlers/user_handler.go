@@ -56,12 +56,29 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	var input struct {
+		Name           *string `json:"name"`
+		Email          *string `json:"email"`
+		TelegramChatID *int64  `json:"telegram_chat_id"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := database.DB.Save(&user).Error; err != nil {
+	updates := make(map[string]interface{})
+	if input.Name != nil {
+		updates["name"] = *input.Name
+	}
+	if input.Email != nil {
+		updates["email"] = *input.Email
+	}
+	if input.TelegramChatID != nil {
+		updates["telegram_chat_id"] = *input.TelegramChatID
+	}
+
+	if err := database.DB.Model(&user).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

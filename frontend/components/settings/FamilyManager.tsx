@@ -6,8 +6,10 @@ interface FamilyManagerProps {
   users: User[];
   userName: string;
   userEmail: string;
+  userTelegramId: string;
   setUserName: (val: string) => void;
   setUserEmail: (val: string) => void;
+  setUserTelegramId: (val: string) => void;
   onUserSubmit: (e: React.FormEvent) => void;
   onUserEdit: (user: User) => void;
   onUserDelete: (id: number) => void;
@@ -17,7 +19,7 @@ interface FamilyManagerProps {
 }
 
 export const FamilyManager = ({
-  users, userName, userEmail, setUserName, setUserEmail,
+  users, userName, userEmail, userTelegramId, setUserName, setUserEmail, setUserTelegramId,
   onUserSubmit, onUserEdit, onUserDelete, editingUser, setEditingUser, isSubmitting
 }: FamilyManagerProps) => (
   <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -36,12 +38,13 @@ export const FamilyManager = ({
     <form onSubmit={onUserSubmit} className="space-y-3 bg-[#FDFCF9] p-6 rounded-[2rem] border border-gray-100 shadow-sm mb-8">
       <Input value={userName} onChange={(e) => setUserName(e.target.value)} placeholder="Name" required />
       <Input value={userEmail} type="email" onChange={(e) => setUserEmail(e.target.value)} placeholder="Email" required />
+      <Input value={userTelegramId} type="number" onChange={(e) => setUserTelegramId(e.target.value)} placeholder="Telegram Chat ID (Optional)" />
       <div className="flex gap-2">
         <Button type="submit" isLoading={isSubmitting} className="w-full">
           {editingUser ? "Update" : "Add Member"}
         </Button>
         {editingUser && (
-          <Button variant="ghost" onClick={() => { setEditingUser(null); setUserName(""); setUserEmail(""); }}>✕</Button>
+          <Button variant="ghost" onClick={() => { setEditingUser(null); setUserName(""); setUserEmail(""); setUserTelegramId(""); }}>✕</Button>
         )}
       </div>
     </form>
@@ -56,7 +59,12 @@ export const FamilyManager = ({
           <div key={user.id} className="group p-4 bg-white rounded-2xl border border-gray-50 hover:shadow-md transition-all flex justify-between items-center">
             <div className="min-w-0">
               <p className="font-black text-[#1C1C1E] truncate text-sm">{user.name}</p>
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">{user.email}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight truncate">{user.email}</p>
+                {user.telegram_chat_id ? (
+                   <span className="text-[9px] font-black bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded uppercase">TG: {user.telegram_chat_id}</span>
+                ) : null}
+              </div>
             </div>
             <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
               <Button variant="secondary" size="sm" onClick={() => onUserEdit(user)} className="px-2 py-2">

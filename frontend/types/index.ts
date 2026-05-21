@@ -2,6 +2,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  telegram_chat_id: number;
   created_at?: string;
   updated_at?: string;
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/imvalerio/whatsinmyfridge/internal/database"
 	"github.com/imvalerio/whatsinmyfridge/internal/models"
 	"github.com/resend/resend-go/v3"
@@ -28,41 +29,29 @@ func SendExpirationNotifications() error {
 	err := database.DB.Where("sent_date = ?", todayStr).First(&notificationLog).Error
 	if err == nil {
 		// Already sent today
+		log.Printf("Notifications already sent today")
 		return nil
 	}
 	if err != gorm.ErrRecordNotFound {
 		return fmt.Errorf("failed to check notification log: %v", err)
 	}
 
-	apiKey := os.Getenv("RESEND_API_KEY")
-	if apiKey == "" {
-		return fmt.Errorf("RESEND_API_KEY not set")
-	}
-
-	client := resend.NewClient(apiKey)
-
 	// Get ranges
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	tomorrowStart := todayStart.Add(24 * time.Hour)
 	tomorrowEnd := tomorrowStart.Add(24 * time.Hour)
 
-	// We look for everything expiring today or tomorrow.
-	// We specifically want items expiring today that haven't been communicated yet.
-	// But we also include tomorrow's items for the summary.
-	// We exclude frozen foods.
 	var expiringFoods []models.Food
 	err = database.DB.Where("expiration_date >= ? AND expiration_date < ? AND is_frozen = ?", todayStart, tomorrowEnd, false).Find(&expiringFoods).Error
 	if err != nil {
 		return fmt.Errorf("failed to query expiring foods: %v", err)
 	}
 
-	// Filter to check if we actually have something new to report for TODAY
-	// or if we just want to send the daily summary regardless if there are any items.
-	// If the fridge is empty or nothing expires, we might skip the email.
-	if len(expiringFoods) == 0 {
-		log.Printf("No items expiring today or tomorrow. Skipping email for %s", todayStr)
-		// We still mark it as "processed" for today so we don't keep checking every hour
+	if len(expiringFoods) <= 0 {
+		log.Printf("No items expiring today or tomorrow. Skipping notifications for %s", todayStr)
 		return logNotificationSuccess(todayStr)
+	} else {
+		log.Printf("Found %d expiring foods", len(expiringFoods))
 	}
 
 	var expiringToday []models.Food
@@ -87,7 +76,39 @@ func SendExpirationNotifications() error {
 		return nil
 	}
 
-	// Prepare email content
+	// --- EMAIL NOTIFICATION ---
+	if err := sendEmail(todayStr, expiringToday, expiringTomorrow, users); err != nil {
+		log.Printf("Error sending emails: %v", err)
+	}
+
+	// --- TELEGRAM NOTIFICATION ---
+	if err := sendTelegram(todayStr, expiringToday, expiringTomorrow, users); err != nil {
+		log.Printf("Error sending telegram messages: %v", err)
+	}
+
+	// Mark as communicated only those expiring TODAY
+	if len(expiringToday) > 0 {
+		todayIDs := make([]uint, len(expiringToday))
+		for i, food := range expiringToday {
+			todayIDs[i] = food.ID
+		}
+		err = database.DB.Model(&models.Food{}).Where("id IN ?", todayIDs).Update("expiration_communicated", true).Error
+		if err != nil {
+			log.Printf("Warning: failed to update food communication status: %v", err)
+		}
+	}
+
+	return logNotificationSuccess(todayStr)
+}
+
+func sendEmail(todayStr string, expiringToday, expiringTomorrow []models.Food, users []models.User) error {
+	apiKey := os.Getenv("RESEND_API_KEY")
+	if apiKey == "" {
+		return fmt.Errorf("RESEND_API_KEY not set")
+	}
+
+	client := resend.NewClient(apiKey)
+
 	var htmlContent strings.Builder
 	htmlContent.WriteString(fmt.Sprintf("<h2>Food Expiration Report - %s</h2>", todayStr))
 
@@ -128,26 +149,58 @@ func SendExpirationNotifications() error {
 		Html:    htmlContent.String(),
 	}
 
-	sent, err := client.Emails.Send(params)
+	_, err := client.Emails.Send(params)
+	return err
+}
+
+func sendTelegram(todayStr string, expiringToday, expiringTomorrow []models.Food, users []models.User) error {
+	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+	if token == "" {
+		log.Printf("Telegram notification not configured...")
+		return nil // Telegram not configured
+	}
+
+	bot, err := tgbotapi.NewBotAPI(token)
 	if err != nil {
-		return fmt.Errorf("failed to send email: %v", err)
+		return err
 	}
 
-	log.Printf("Daily expiration email sent: %s to %d users", sent.Id, len(users))
+	var msgContent strings.Builder
+	msgContent.WriteString(fmt.Sprintf("*Food Expiration Report - %s*\n\n", todayStr))
 
-	// Mark as communicated only those expiring TODAY
 	if len(expiringToday) > 0 {
-		todayIDs := make([]uint, len(expiringToday))
-		for i, food := range expiringToday {
-			todayIDs[i] = food.ID
+		msgContent.WriteString("*Expiring Today:*\n")
+		for _, food := range expiringToday {
+			status := ""
+			if food.ExpirationCommunicated {
+				status = " (already notified)"
+			}
+			msgContent.WriteString(fmt.Sprintf("• %s (Qty: %d)%s\n", food.Name, food.Quantity, status))
 		}
-		err = database.DB.Model(&models.Food{}).Where("id IN ?", todayIDs).Update("expiration_communicated", true).Error
-		if err != nil {
-			log.Printf("Warning: failed to update food communication status: %v", err)
+		msgContent.WriteString("\n")
+	}
+
+	if len(expiringTomorrow) > 0 {
+		msgContent.WriteString("*Expiring Tomorrow:*\n")
+		for _, food := range expiringTomorrow {
+			msgContent.WriteString(fmt.Sprintf("• %s (Qty: %d)\n", food.Name, food.Quantity))
 		}
 	}
 
-	return logNotificationSuccess(todayStr)
+	messageText := msgContent.String()
+
+	for _, user := range users {
+		if user.TelegramChatID != 0 {
+			msg := tgbotapi.NewMessage(user.TelegramChatID, messageText)
+			msg.ParseMode = "Markdown"
+			_, err := bot.Send(msg)
+			if err != nil {
+				log.Printf("Failed to send telegram message to user %d: %v", user.ID, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func logNotificationSuccess(date string) error {

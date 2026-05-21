@@ -36,11 +36,12 @@ type FoodLog struct {
 
 // User model
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Name      string    `json:"name" binding:"required"`
-	Email     string    `json:"email" binding:"required,email" gorm:"unique"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID             uint      `gorm:"primaryKey" json:"id"`
+	Name           string    `json:"name" binding:"required"`
+	Email          string    `json:"email" binding:"required,email" gorm:"unique"`
+	TelegramChatID int64     `json:"telegram_chat_id"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // NotificationLog tracks daily successful notifications

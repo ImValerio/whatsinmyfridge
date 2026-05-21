@@ -74,6 +74,7 @@ export default function FridgeApp() {
   // User Form State
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [userTelegramId, setUserTelegramId] = useState("");
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isSubmittingUser, setIsSubmittingUser] = useState(false);
 
@@ -200,13 +201,18 @@ export default function FridgeApp() {
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: userName.trim(), email: userEmail.trim() }),
+        body: JSON.stringify({ 
+          name: userName.trim(), 
+          email: userEmail.trim(),
+          telegram_chat_id: userTelegramId ? Number(userTelegramId) : 0
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to save user");
 
       setUserName("");
       setUserEmail("");
+      setUserTelegramId("");
       setEditingUser(null);
       fetchData();
     } catch (err) {
@@ -774,10 +780,17 @@ export default function FridgeApp() {
           users={users}
           userName={userName}
           userEmail={userEmail}
+          userTelegramId={userTelegramId}
           setUserName={setUserName}
           setUserEmail={setUserEmail}
+          setUserTelegramId={setUserTelegramId}
           onUserSubmit={handleUserSubmit}
-          onUserEdit={(u) => { setEditingUser(u); setUserName(u.name); setUserEmail(u.email); }}
+          onUserEdit={(u) => { 
+            setEditingUser(u); 
+            setUserName(u.name); 
+            setUserEmail(u.email);
+            setUserTelegramId(u.telegram_chat_id ? String(u.telegram_chat_id) : "");
+          }}
           onUserDelete={handleUserDelete}
           editingUser={editingUser}
           setEditingUser={setEditingUser}
