@@ -29,23 +29,34 @@ systemctl start avahi-daemon
 # 3. Configure Resend and Email (Optional)
 echo ""
 echo "Configure Email Notifications via Resend (Optional)"
+# Ensure .env exists
+touch .env
 read -p "Enter your RESEND_API_KEY (leave blank to skip): " USER_RESEND_KEY
 if [ -n "$USER_RESEND_KEY" ]; then
-    echo "RESEND_API_KEY=$USER_RESEND_KEY" > .env
+    echo "RESEND_API_KEY=$USER_RESEND_KEY" >> .env
     read -p "Enter the sender email address (e.g. fridge@yourdomain.com): " USER_EMAIL_FROM
     if [ -n "$USER_EMAIL_FROM" ]; then
         echo "EMAIL_ADDRESS_FROM=$USER_EMAIL_FROM" >> .env
-        echo "Configuration saved to .env"
+        echo "Resend configuration saved to .env"
     else
         echo "Sender email not provided. Resend configuration might be incomplete."
     fi
 else
     echo "Skipping Resend configuration."
-    # Ensure .env exists to avoid docker-compose warnings
-    touch .env
 fi
 
-# 4. Choose docker-compose file and cleanup
+# 4. Configure Telegram Bot (Optional)
+echo ""
+echo "Configure Telegram Notifications (Optional)"
+read -p "Enter your TELEGRAM_BOT_TOKEN (leave blank to skip): " USER_TELEGRAM_TOKEN
+if [ -n "$USER_TELEGRAM_TOKEN" ]; then
+    echo "TELEGRAM_BOT_TOKEN=$USER_TELEGRAM_TOKEN" >> .env
+    echo "Telegram configuration saved to .env"
+else
+    echo "Skipping Telegram configuration."
+fi
+
+# 5. Choose docker-compose file and cleanup
 echo ""
 echo "Which Docker images would you like to use?"
 echo "1) Prebuilt images (imvalerio/whatsinmyfridge-*)"
@@ -54,7 +65,6 @@ read -p "Select option (1 or 2): " IMAGE_CHOICE
 
 if [ "$IMAGE_CHOICE" == "1" ]; then
     echo "Using prebuilt images. Cleaning up..."
-    mv docker-compose.pi.yml docker-compose.yml
     rm -f docker-compose.yml
     mv docker-compose.pi.yml docker-compose.yml
 else
@@ -65,7 +75,7 @@ fi
 COMPOSE_FILE="docker-compose.yml"
 echo "Selected docker-compose.yml configured."
 
-# 5. Configure startup
+# 6. Configure startup
 SERVICE_FILE="/etc/systemd/system/whatsinmyfridge.service"
 if [ ! -f "$SERVICE_FILE" ]; then
     echo "Creating systemd service for startup..."
@@ -96,7 +106,7 @@ else
     echo "Startup service already exists (updated WorkingDirectory)."
 fi
 
-# 6. Run docker compose
+# 7. Run docker compose
 echo "Starting application..."
 docker compose up -d
 

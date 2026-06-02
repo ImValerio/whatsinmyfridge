@@ -12,6 +12,7 @@ services:
     environment:
       - RESEND_API_KEY=${RESEND_API_KEY}
       - EMAIL_ADDRESS_FROM=${EMAIL_ADDRESS_FROM}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
     volumes:
       - backend_data:/root
     restart: always
